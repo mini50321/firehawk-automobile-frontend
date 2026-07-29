@@ -1,0 +1,25 @@
+.car-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+  padding: 1rem 0;
+}
+
+.car-filters-search {
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.car-filters-range {
+  display: flex;
+  gap: 0.5rem;
+
+  mat-form-field {
+    width: 110px;
+  }
+}
+
+.car-filters mat-form-field {
+  flex: 0 0 auto;
+}

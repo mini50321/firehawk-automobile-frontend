@@ -1,0 +1,71 @@
+<form [formGroup]="form" class="car-filters">
+  <mat-form-field appearance="outline" class="car-filters-search">
+    <mat-label>Search</mat-label>
+    <input matInput formControlName="search" placeholder="Search by make or model" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Origin</mat-label>
+    <mat-select formControlName="origin">
+      <mat-option [value]="null">All origins</mat-option>
+      @for (origin of origins(); track origin) {
+        <mat-option [value]="origin">{{ origin }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Cylinders</mat-label>
+    <mat-select formControlName="cylinders">
+      <mat-option [value]="null">All</mat-option>
+      @for (count of cylinderOptions(); track count) {
+        <mat-option [value]="count">{{ count }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Model year</mat-label>
+    <mat-select formControlName="modelYear">
+      <mat-option [value]="null">All years</mat-option>
+      @for (year of modelYears(); track year) {
+        <mat-option [value]="year">{{ year }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <div class="car-filters-range" role="group" aria-label="MPG range">
+    <mat-form-field appearance="outline">
+      <mat-label>Min MPG</mat-label>
+      <input matInput type="number" formControlName="mpgMin" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Max MPG</mat-label>
+      <input matInput type="number" formControlName="mpgMax" />
+    </mat-form-field>
+  </div>
+
+  <div class="car-filters-range" role="group" aria-label="Horsepower range">
+    <mat-form-field appearance="outline">
+      <mat-label>Min HP</mat-label>
+      <input matInput type="number" formControlName="horsepowerMin" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Max HP</mat-label>
+      <input matInput type="number" formControlName="horsepowerMax" />
+    </mat-form-field>
+  </div>
+
+  <div class="car-filters-range" role="group" aria-label="Weight range in pounds">
+    <mat-form-field appearance="outline">
+      <mat-label>Min lbs</mat-label>
+      <input matInput type="number" formControlName="weightMin" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Max lbs</mat-label>
+      <input matInput type="number" formControlName="weightMax" />
+    </mat-form-field>
+  </div>
+
+  <button mat-stroked-button type="button" (click)="resetFilters()">Reset filters</button>
+</form>

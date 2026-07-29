@@ -24,6 +24,11 @@ describe('AutomobileRepository', () => {
     mileage: 12000,
     price: 22000,
     status: 'available',
+    origin: 'Japan',
+    cylinders: 4,
+    mpg: 32,
+    horsepower: 140,
+    weight: 2900,
   };
   const mockCar: Car = { id: '1', ...mockCarPayload };
 

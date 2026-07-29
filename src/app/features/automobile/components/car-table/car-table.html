@@ -1,4 +1,6 @@
 <div class="car-table-container">
+  <app-car-filters [cars]="cars()" (filtersChange)="filterCriteria.set($event)" />
+
   <div class="car-table-progress">
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
@@ -53,6 +55,31 @@
         <td mat-cell *matCellDef="let car">{{ car.status }}</td>
       </ng-container>
 
+      <ng-container matColumnDef="origin">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Origin</th>
+        <td mat-cell *matCellDef="let car">{{ car.origin }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cylinders">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Cyl</th>
+        <td mat-cell *matCellDef="let car">{{ car.cylinders }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="mpg">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>MPG</th>
+        <td mat-cell *matCellDef="let car">{{ car.mpg }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="horsepower">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>HP</th>
+        <td mat-cell *matCellDef="let car">{{ car.horsepower }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="weight">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Weight</th>
+        <td mat-cell *matCellDef="let car">{{ car.weight | number }} lbs</td>
+      </ng-container>
+
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
 
@@ -60,6 +87,8 @@
         <td class="mat-cell" [attr.colspan]="displayedColumns().length">
           @if (error(); as message) {
             {{ message }}
+          } @else if (!loading() && hasActiveFilters()) {
+            No automobiles match your filters.
           } @else if (!loading()) {
             No automobiles found.
           }

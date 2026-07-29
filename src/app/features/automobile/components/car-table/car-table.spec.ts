@@ -16,6 +16,11 @@ function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
     mileage: 10000,
     price: 20000,
     status: 'available',
+    origin: 'Japan',
+    cylinders: 4,
+    mpg: 32,
+    horsepower: 140,
+    weight: 2900,
     ...overrides,
   };
 }
@@ -151,6 +156,11 @@ describe('CarTable', () => {
       'Mileage',
       'VIN',
       'Status',
+      'Origin',
+      'Cyl',
+      'MPG',
+      'HP',
+      'Weight',
     ]);
   });
 
@@ -162,5 +172,59 @@ describe('CarTable', () => {
     fixture.detectChanges();
 
     expect(headerTexts(fixture.nativeElement)).toEqual(['Make', 'Model', 'Year', 'Price']);
+  });
+
+  describe('filtering', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should narrow visible rows when a search term is entered', async () => {
+      const cars = [
+        buildCar({ id: '1', make: 'Toyota', model: 'Corolla' }),
+        buildCar({ id: '2', make: 'Honda', model: 'Civic' }),
+      ];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      expect(bodyRows(fixture.nativeElement)).toHaveLength(2);
+
+      const searchInput = fixture.nativeElement.querySelector(
+        'input[formControlName="search"]',
+      ) as HTMLInputElement;
+      searchInput.value = 'civic';
+      searchInput.dispatchEvent(new Event('input'));
+
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      const rows = bodyRows(fixture.nativeElement);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].textContent).toContain('Honda');
+    });
+
+    it('should show a filters-specific empty state when nothing matches', async () => {
+      const cars = [buildCar({ id: '1', make: 'Toyota', model: 'Corolla' })];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(300);
+
+      const searchInput = fixture.nativeElement.querySelector(
+        'input[formControlName="search"]',
+      ) as HTMLInputElement;
+      searchInput.value = 'nonexistent';
+      searchInput.dispatchEvent(new Event('input'));
+
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('No automobiles match your filters.');
+    });
   });
 });
