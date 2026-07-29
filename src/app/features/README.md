@@ -14,4 +14,4 @@ features/dashboard/
 
 Register a feature's routes in `app.routes.ts` via `loadChildren`.
 
-No features exist yet — this directory is scaffolding for the next stage.
+`automobile/` currently holds only data-access (`models/`, `services/`) — no routes or components yet.
