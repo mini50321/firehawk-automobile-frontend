@@ -1,15 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
-import { environment } from '../environments/environment';
+import { MainLayout } from './layout/main-layout/main-layout';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MatToolbarModule],
+  imports: [MainLayout],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {
-  protected readonly title = environment.appName;
-}
+export class App {}

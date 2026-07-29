@@ -1,0 +1,20 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    class="shell-sidenav"
+    fixedInViewport
+    [attr.role]="isHandset() ? 'dialog' : 'navigation'"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+  >
+    <mat-nav-list>
+      <!-- Navigation links will be added once features exist. -->
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell-content">
+    <app-toolbar [title]="title" (menuToggle)="toggleSidenav()" />
+    <main class="shell-main">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

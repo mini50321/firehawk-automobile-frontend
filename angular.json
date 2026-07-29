@@ -3,7 +3,10 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": ["angular-eslint"]
+    "schematicCollections": [
+      "angular-eslint"
+    ],
+    "analytics": "196bb1ab-c70d-4ad5-b8f1-36aecda81039"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -38,8 +41,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "850kB",
+                  "maximumError": "1.2MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -65,6 +68,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "127.0.0.1"
+          },
           "configurations": {
             "production": {
               "buildTarget": "firehawk-automobile:build:production"

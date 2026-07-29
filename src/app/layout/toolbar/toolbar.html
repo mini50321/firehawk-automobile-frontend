@@ -1,0 +1,11 @@
+<mat-toolbar color="primary" class="toolbar">
+  <button
+    type="button"
+    mat-icon-button
+    aria-label="Toggle navigation menu"
+    (click)="menuToggle.emit()"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="toolbar-title">{{ title() }}</span>
+</mat-toolbar>

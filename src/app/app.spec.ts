@@ -1,10 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+
 import { App } from './app';
+import { environment } from '../environments/environment';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -14,10 +18,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render the app title', () => {
+  it('should render the app title in the toolbar', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('mat-toolbar')?.textContent).toContain('Firehawk Automobile');
+    expect(compiled.querySelector('mat-toolbar')?.textContent).toContain(environment.appName);
   });
 });
