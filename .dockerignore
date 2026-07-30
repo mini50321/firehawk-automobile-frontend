@@ -1,0 +1,15 @@
+node_modules
+dist
+.angular
+.git
+.gitignore
+.vscode
+.editorconfig
+.prettierrc
+.prettierignore
+eslint.config.js
+README.md
+Dockerfile
+.dockerignore
+npm-debug.log*
+*.log
