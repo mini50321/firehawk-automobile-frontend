@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>{{ car.make }} {{ car.model }} ({{ car.year }})</h2>
+
+<mat-dialog-content>
+  <dl class="car-details-grid">
+    <dt>VIN</dt>
+    <dd>{{ car.vin }}</dd>
+
+    <dt>Color</dt>
+    <dd>{{ car.color }}</dd>
+
+    <dt>Mileage</dt>
+    <dd>{{ car.mileage | number }} mi</dd>
+
+    <dt>Price</dt>
+    <dd>{{ car.price | currency }}</dd>
+
+    <dt>Status</dt>
+    <dd>{{ car.status | titlecase }}</dd>
+
+    <dt>Origin</dt>
+    <dd>{{ car.origin }}</dd>
+
+    <dt>Cylinders</dt>
+    <dd>{{ car.cylinders }}</dd>
+
+    <dt>MPG</dt>
+    <dd>{{ car.mpg }}</dd>
+
+    <dt>Horsepower</dt>
+    <dd>{{ car.horsepower }}</dd>
+
+    <dt>Weight</dt>
+    <dd>{{ car.weight | number }} lbs</dd>
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

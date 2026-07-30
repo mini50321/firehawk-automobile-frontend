@@ -1,0 +1,26 @@
+.car-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.car-stats-card {
+  flex: 1 1 160px;
+}
+
+.car-stats-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.car-stats-value {
+  font-size: 1.75rem;
+  font-weight: 500;
+}
+
+.car-stats-label {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}

@@ -1,0 +1,16 @@
+.car-details-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 1rem;
+  row-gap: 0.5rem;
+  margin: 0;
+}
+
+.car-details-grid dt {
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 500;
+}
+
+.car-details-grid dd {
+  margin: 0;
+}

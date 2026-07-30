@@ -1,4 +1,6 @@
 <div class="car-table-container">
+  <app-car-stats [cars]="filteredCars()" />
+
   <app-car-filters [cars]="cars()" (filtersChange)="filterCriteria.set($event)" />
 
   <div class="car-table-progress">
@@ -81,7 +83,17 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns()"
+        class="car-table-row"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'View details for ' + row.make + ' ' + row.model"
+        (click)="openDetails(row)"
+        (keydown.enter)="openDetails(row)"
+        (keydown.space)="$event.preventDefault(); openDetails(row)"
+      ></tr>
 
       <tr class="mat-row car-table-no-data" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns().length">

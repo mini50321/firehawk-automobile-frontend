@@ -1,0 +1,29 @@
+<div class="car-stats">
+  <mat-card class="car-stats-card" appearance="outlined">
+    <mat-card-content>
+      <span class="car-stats-value">{{ stats().totalCount }}</span>
+      <span class="car-stats-label">Total Automobiles</span>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="car-stats-card" appearance="outlined">
+    <mat-card-content>
+      <span class="car-stats-value">{{ stats().averageMpg | number: '1.0-1' }}</span>
+      <span class="car-stats-label">Average MPG</span>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="car-stats-card" appearance="outlined">
+    <mat-card-content>
+      <span class="car-stats-value">{{ stats().averageHorsepower | number: '1.0-0' }}</span>
+      <span class="car-stats-label">Average Horsepower</span>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="car-stats-card" appearance="outlined">
+    <mat-card-content>
+      <span class="car-stats-value">{{ stats().averageWeight | number: '1.0-0' }} lbs</span>
+      <span class="car-stats-label">Average Weight</span>
+    </mat-card-content>
+  </mat-card>
+</div>

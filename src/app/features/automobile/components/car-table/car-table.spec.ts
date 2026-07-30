@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { MatDialog } from '@angular/material/dialog';
 import { BehaviorSubject, Observable, Subject, map, of, throwError } from 'rxjs';
 
 import { CarTable } from './car-table';
 import { AutomobileRepository } from '../../services/automobile-repository';
+import { CarDetailsDialog } from '../car-details-dialog/car-details-dialog';
 import { Car } from '../../models/car.model';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
@@ -28,9 +30,11 @@ function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
 describe('CarTable', () => {
   let fixture: ComponentFixture<CarTable>;
   let handsetMatches$: BehaviorSubject<boolean>;
+  let dialogOpen: ReturnType<typeof vi.fn>;
 
   function setup(cars$: Observable<Car[]>): ComponentFixture<CarTable> {
     handsetMatches$ = new BehaviorSubject<boolean>(false);
+    dialogOpen = vi.fn();
 
     TestBed.configureTestingModule({
       imports: [CarTable],
@@ -45,6 +49,7 @@ describe('CarTable', () => {
               ),
           },
         },
+        { provide: MatDialog, useValue: { open: dialogOpen } },
       ],
     });
 
@@ -236,6 +241,76 @@ describe('CarTable', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain('No automobiles match your filters.');
+    });
+
+    it('should recompute the stats cards to reflect only the filtered cars', async () => {
+      const cars = [
+        buildCar({ id: '1', make: 'Toyota', model: 'Corolla', mpg: 30 }),
+        buildCar({ id: '2', make: 'Honda', model: 'Civic', mpg: 40 }),
+      ];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      const totalBefore = fixture.nativeElement.querySelector('.car-stats-value')?.textContent;
+      expect(totalBefore?.trim()).toBe('2');
+
+      const searchInput = fixture.nativeElement.querySelector(
+        'input[formControlName="search"]',
+      ) as HTMLInputElement;
+      searchInput.value = 'civic';
+      searchInput.dispatchEvent(new Event('input'));
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      const values = Array.from(root.querySelectorAll('.car-stats-value')).map((el) =>
+        el.textContent?.trim(),
+      );
+      expect(values[0]).toBe('1');
+      expect(values[1]).toBe('40');
+    });
+  });
+
+  describe('details dialog', () => {
+    it('should open the details dialog with the clicked car when a row is clicked', () => {
+      const car = buildCar({ id: '1', make: 'Toyota', model: 'Corolla' });
+      fixture = setup(of([car]));
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
+      row.click();
+
+      expect(dialogOpen).toHaveBeenCalledWith(
+        CarDetailsDialog,
+        expect.objectContaining({ data: car }),
+      );
+    });
+
+    it('should open the details dialog when Enter is pressed on a focused row', () => {
+      const car = buildCar({ id: '1', make: 'Toyota', model: 'Corolla' });
+      fixture = setup(of([car]));
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      expect(dialogOpen).toHaveBeenCalledWith(
+        CarDetailsDialog,
+        expect.objectContaining({ data: car }),
+      );
+    });
+
+    it('should mark rows as keyboard-focusable buttons for accessibility', () => {
+      const car = buildCar({ id: '1', make: 'Toyota', model: 'Corolla' });
+      fixture = setup(of([car]));
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
+      expect(row.getAttribute('role')).toBe('button');
+      expect(row.getAttribute('tabindex')).toBe('0');
+      expect(row.getAttribute('aria-label')).toBe('View details for Toyota Corolla');
     });
   });
 

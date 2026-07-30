@@ -15,6 +15,7 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { catchError, map, merge, of, startWith } from 'rxjs';
 
 import { AutomobileRepository } from '../../services/automobile-repository';
@@ -25,6 +26,8 @@ import {
 } from '../../models/car-filter-criteria.model';
 import { filterCars } from '../../utils/filter-cars';
 import { CarFilters } from '../car-filters/car-filters';
+import { CarStats } from '../car-stats/car-stats';
+import { CarDetailsDialog } from '../car-details-dialog/car-details-dialog';
 import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
 
 type CarColumn =
@@ -75,6 +78,7 @@ const INITIAL_STATE: CarsLoadState = { loading: true, cars: [], error: null };
     CurrencyPipe,
     DecimalPipe,
     CarFilters,
+    CarStats,
   ],
   templateUrl: './car-table.html',
   styleUrl: './car-table.scss',
@@ -84,6 +88,7 @@ export class CarTable implements AfterViewInit {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly viewState = inject(CarTableViewStateStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
@@ -112,7 +117,7 @@ export class CarTable implements AfterViewInit {
     () => JSON.stringify(this.filterCriteria()) !== JSON.stringify(EMPTY_CAR_FILTER_CRITERIA),
   );
 
-  private readonly filteredCars = computed(() => filterCars(this.cars(), this.filterCriteria()));
+  protected readonly filteredCars = computed(() => filterCars(this.cars(), this.filterCriteria()));
 
   private readonly isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
@@ -166,5 +171,13 @@ export class CarTable implements AfterViewInit {
         this.viewState.updateSort(sort.active, sort.direction);
         this.viewState.updatePage(paginator.pageIndex, paginator.pageSize);
       });
+  }
+
+  protected openDetails(car: Car): void {
+    this.dialog.open(CarDetailsDialog, {
+      data: car,
+      width: '480px',
+      maxWidth: '90vw',
+    });
   }
 }
