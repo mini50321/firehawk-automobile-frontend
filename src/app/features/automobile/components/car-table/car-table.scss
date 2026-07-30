@@ -3,6 +3,16 @@
   flex-direction: column;
 }
 
+.car-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 0.5rem;
+}
+
+.car-table-actions button mat-icon {
+  margin-right: 0.25rem;
+}
+
 .car-table-progress {
   height: 4px;
 }

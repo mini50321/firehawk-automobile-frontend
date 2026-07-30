@@ -3,6 +3,18 @@
 
   <app-car-filters [cars]="cars()" (filtersChange)="filterCriteria.set($event)" />
 
+  <div class="car-table-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="loading() || filteredCars().length === 0"
+      (click)="exportCsv()"
+    >
+      <mat-icon>download</mat-icon>
+      Export CSV
+    </button>
+  </div>
+
   <div class="car-table-progress">
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
@@ -97,12 +109,18 @@
 
       <tr class="mat-row car-table-no-data" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns().length">
-          @if (error(); as message) {
-            {{ message }}
-          } @else if (!loading() && hasActiveFilters()) {
-            No automobiles match your filters.
-          } @else if (!loading()) {
-            No automobiles found.
+          @if (!loading()) {
+            <app-empty-state
+              [icon]="emptyState().icon"
+              [title]="emptyState().title"
+              [message]="emptyState().message"
+            >
+              @if (hasActiveFilters() && !error()) {
+                <button mat-stroked-button type="button" (click)="resetFilters()">
+                  Reset Filters
+                </button>
+              }
+            </app-empty-state>
           }
         </td>
       </tr>

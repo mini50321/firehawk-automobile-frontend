@@ -7,6 +7,8 @@ import { CarTable } from './car-table';
 import { AutomobileRepository } from '../../services/automobile-repository';
 import { CarDetailsDialog } from '../car-details-dialog/car-details-dialog';
 import { Car } from '../../models/car.model';
+import { FileDownload } from '../../../../core/services/file-download';
+import { Feedback } from '../../../../core/services/feedback';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
@@ -31,10 +33,14 @@ describe('CarTable', () => {
   let fixture: ComponentFixture<CarTable>;
   let handsetMatches$: BehaviorSubject<boolean>;
   let dialogOpen: ReturnType<typeof vi.fn>;
+  let downloadTextFile: ReturnType<typeof vi.fn>;
+  let feedbackShow: ReturnType<typeof vi.fn>;
 
   function setup(cars$: Observable<Car[]>): ComponentFixture<CarTable> {
     handsetMatches$ = new BehaviorSubject<boolean>(false);
     dialogOpen = vi.fn();
+    downloadTextFile = vi.fn();
+    feedbackShow = vi.fn();
 
     TestBed.configureTestingModule({
       imports: [CarTable],
@@ -50,6 +56,8 @@ describe('CarTable', () => {
           },
         },
         { provide: MatDialog, useValue: { open: dialogOpen } },
+        { provide: FileDownload, useValue: { downloadTextFile } },
+        { provide: Feedback, useValue: { show: feedbackShow } },
       ],
     });
 
@@ -100,7 +108,7 @@ describe('CarTable', () => {
     fixture = setup(of([]));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('No automobiles found.');
+    expect(fixture.nativeElement.textContent).toContain('No automobiles yet');
   });
 
   it('should show an error message when the repository fails', () => {
@@ -240,7 +248,35 @@ describe('CarTable', () => {
       await vi.advanceTimersByTimeAsync(300);
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.textContent).toContain('No automobiles match your filters.');
+      expect(fixture.nativeElement.textContent).toContain('No automobiles match your filters');
+    });
+
+    it('should offer a Reset Filters action in the empty state, which clears the filters', async () => {
+      const cars = [buildCar({ id: '1', make: 'Toyota', model: 'Corolla' })];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(300);
+
+      const searchInput = fixture.nativeElement.querySelector(
+        'input[formControlName="search"]',
+      ) as HTMLInputElement;
+      searchInput.value = 'nonexistent';
+      searchInput.dispatchEvent(new Event('input'));
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      const resetButton = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+      ).find((btn) => btn.textContent?.trim() === 'Reset Filters');
+      expect(resetButton).toBeTruthy();
+
+      resetButton?.click();
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+
+      expect(bodyRows(fixture.nativeElement)).toHaveLength(1);
+      expect(searchInput.value).toBe('');
+      expect(feedbackShow).toHaveBeenCalledWith('Filters reset.');
     });
 
     it('should recompute the stats cards to reflect only the filtered cars', async () => {
@@ -311,6 +347,53 @@ describe('CarTable', () => {
       expect(row.getAttribute('role')).toBe('button');
       expect(row.getAttribute('tabindex')).toBe('0');
       expect(row.getAttribute('aria-label')).toBe('View details for Toyota Corolla');
+    });
+  });
+
+  describe('CSV export', () => {
+    function exportButton(root: HTMLElement): HTMLButtonElement | null {
+      return Array.from(root.querySelectorAll('button')).find((btn) =>
+        btn.textContent?.includes('Export CSV'),
+      ) as HTMLButtonElement | null;
+    }
+
+    it('should download a CSV of the currently filtered cars when Export CSV is clicked', () => {
+      const cars = [
+        buildCar({ id: '1', make: 'Toyota', model: 'Corolla' }),
+        buildCar({ id: '2', make: 'Honda', model: 'Civic' }),
+      ];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      exportButton(root)?.click();
+
+      expect(downloadTextFile).toHaveBeenCalledTimes(1);
+      const [filename, content, mimeType] = downloadTextFile.mock.calls[0];
+      expect(filename).toMatch(/^automobiles-\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(content).toContain('Toyota,Corolla');
+      expect(content).toContain('Honda,Civic');
+      expect(mimeType).toBe('text/csv');
+      expect(feedbackShow).toHaveBeenCalledWith('Exported 2 automobiles to CSV.');
+    });
+
+    it('should disable the export button when there are no cars to export', () => {
+      fixture = setup(of([]));
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      expect(exportButton(root)?.disabled).toBe(true);
+    });
+
+    it('should show feedback with singular wording when exactly one car is exported', () => {
+      const car = buildCar({ id: '1' });
+      fixture = setup(of([car]));
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      exportButton(root)?.click();
+
+      expect(feedbackShow).toHaveBeenCalledWith('Exported 1 automobile to CSV.');
     });
   });
 

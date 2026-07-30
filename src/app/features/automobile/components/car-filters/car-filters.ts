@@ -124,7 +124,8 @@ export class CarFilters {
       });
   }
 
-  protected resetFilters(): void {
+  /** Public: called both from this component's own template and externally by CarTable's empty-state action. */
+  resetFilters(): void {
     this.form.reset();
   }
 }

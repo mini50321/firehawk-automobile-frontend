@@ -15,6 +15,8 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { catchError, map, merge, of, startWith } from 'rxjs';
 
@@ -25,10 +27,14 @@ import {
   EMPTY_CAR_FILTER_CRITERIA,
 } from '../../models/car-filter-criteria.model';
 import { filterCars } from '../../utils/filter-cars';
+import { carsToCsv } from '../../utils/cars-to-csv';
 import { CarFilters } from '../car-filters/car-filters';
 import { CarStats } from '../car-stats/car-stats';
 import { CarDetailsDialog } from '../car-details-dialog/car-details-dialog';
 import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
+import { FileDownload } from '../../../../core/services/file-download';
+import { Feedback } from '../../../../core/services/feedback';
+import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
 
 type CarColumn =
   | 'make'
@@ -51,6 +57,12 @@ interface CarsLoadState {
   error: string | null;
 }
 
+interface EmptyStateContent {
+  icon: string;
+  title: string;
+  message: string;
+}
+
 const CORE_COLUMNS: CarColumn[] = ['make', 'model', 'year', 'price'];
 const EXTENDED_COLUMNS: CarColumn[] = [
   'color',
@@ -68,6 +80,18 @@ const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 const INITIAL_STATE: CarsLoadState = { loading: true, cars: [], error: null };
 
+const NO_CARS_YET: EmptyStateContent = {
+  icon: 'directions_car',
+  title: 'No automobiles yet',
+  message: 'Automobiles you add will appear here.',
+};
+
+const NO_FILTER_MATCHES: EmptyStateContent = {
+  icon: 'search_off',
+  title: 'No automobiles match your filters',
+  message: 'Try adjusting or resetting your filters.',
+};
+
 @Component({
   selector: 'app-car-table',
   imports: [
@@ -75,10 +99,13 @@ const INITIAL_STATE: CarsLoadState = { loading: true, cars: [], error: null };
     MatSortModule,
     MatPaginatorModule,
     MatProgressBarModule,
+    MatButtonModule,
+    MatIconModule,
     CurrencyPipe,
     DecimalPipe,
     CarFilters,
     CarStats,
+    EmptyState,
   ],
   templateUrl: './car-table.html',
   styleUrl: './car-table.scss',
@@ -89,6 +116,8 @@ export class CarTable implements AfterViewInit {
   private readonly viewState = inject(CarTableViewStateStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
+  private readonly fileDownload = inject(FileDownload);
+  private readonly feedback = inject(Feedback);
 
   protected readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
@@ -96,6 +125,7 @@ export class CarTable implements AfterViewInit {
 
   private readonly sort = viewChild.required(MatSort);
   private readonly paginator = viewChild.required(MatPaginator);
+  private readonly carFilters = viewChild.required(CarFilters);
 
   private readonly state = toSignal(
     this.repository.getCars().pipe(
@@ -118,6 +148,14 @@ export class CarTable implements AfterViewInit {
   );
 
   protected readonly filteredCars = computed(() => filterCars(this.cars(), this.filterCriteria()));
+
+  protected readonly emptyState = computed<EmptyStateContent>(() => {
+    const message = this.error();
+    if (message) {
+      return { icon: 'error_outline', title: 'Something went wrong', message };
+    }
+    return this.hasActiveFilters() ? NO_FILTER_MATCHES : NO_CARS_YET;
+  });
 
   private readonly isHandset = toSignal(
     this.breakpointObserver.observe(Breakpoints.Handset).pipe(map((result) => result.matches)),
@@ -179,5 +217,23 @@ export class CarTable implements AfterViewInit {
       width: '480px',
       maxWidth: '90vw',
     });
+  }
+
+  protected resetFilters(): void {
+    this.carFilters().resetFilters();
+    this.feedback.show('Filters reset.');
+  }
+
+  protected exportCsv(): void {
+    const cars = this.filteredCars();
+    if (cars.length === 0) {
+      this.feedback.show('No automobiles to export.');
+      return;
+    }
+
+    const csv = carsToCsv(cars);
+    const filename = `automobiles-${new Date().toISOString().slice(0, 10)}.csv`;
+    this.fileDownload.downloadTextFile(filename, csv, 'text/csv');
+    this.feedback.show(`Exported ${cars.length} automobile${cars.length === 1 ? '' : 's'} to CSV.`);
   }
 }
