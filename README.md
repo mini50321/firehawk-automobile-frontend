@@ -28,6 +28,9 @@ architecture.
 - **Firebase/Firestore integration** — via [AngularFire](https://github.com/angular/angularfire),
   routed through a single core service so Firestore calls aren't scattered across the
   app.
+- **REST API client** — a reusable `Api` service (`core/services/api.ts`) wrapping
+  `HttpClient` against `environment.apiBaseUrl`, plus a global HTTP error interceptor
+  that turns failed requests into friendly snack bar messages.
 
 ## Tech Stack
 
@@ -40,14 +43,15 @@ architecture.
 | Styling           | SCSS                                                     |
 | Testing           | Vitest (via Angular's built-in unit-test builder)        |
 | Linting/Formatting| ESLint (`angular-eslint`) + Prettier                     |
-| Deployment        | Multi-stage Docker build served by Nginx                 |
+| Deployment        | Multi-stage Docker build served by Nginx, or Vercel        |
 
 ## Project Structure
 
 ```
 src/app/
   core/                     # Singleton, app-wide concerns
-    services/                 # Firebase/Firestore access, local storage, feedback (snack bar), file download
+    services/                 # Firebase/Firestore access, REST API client, local storage, feedback, file download
+    interceptors/              # HTTP interceptors (global error handling)
   shared/                   # Reusable, feature-agnostic building blocks
     components/                # e.g. EmptyState
     models/                    # Shared TypeScript types
@@ -110,6 +114,13 @@ Both files currently ship with **placeholder values** (`YOUR_DEV_API_KEY`, etc.)
 must be edited with real values before the app can talk to Firebase or your backend —
 see below.
 
+`apiBaseUrl` in the production file can additionally be overridden **without editing
+source** at build time: `npm run build` runs `scripts/set-env.mjs` as an npm
+`prebuild` hook, which patches `environment.ts`'s `apiBaseUrl` from an `API_BASE_URL`
+environment variable if one is set (see [`.env.example`](.env.example) and
+[Deployment (Vercel)](#deployment-vercel) below). If `API_BASE_URL` isn't set, the
+build leaves the committed value untouched, so this is a no-op for local builds.
+
 ## Firebase Configuration
 
 The app uses [AngularFire](https://github.com/angular/angularfire) for Firestore
@@ -168,6 +179,34 @@ docker run --rm -p 8080:80 firehawk-automobile-frontend
 Because environment values are baked in at build time (see above), make sure
 `src/environments/environment.ts` has the correct **production** Firebase config
 *before* running `docker build`.
+
+## Deployment (Vercel)
+
+The app is a static SPA, so it deploys to Vercel without Docker/Nginx. `vercel.json`
+at the project root configures everything Vercel needs:
+
+- `buildCommand: "npm run build"` — runs the production build (and its `prebuild`
+  hook, see above).
+- `outputDirectory: "dist/firehawk-automobile/browser"` — Angular nests the actual
+  static output a level deeper than Vercel's default `dist/`.
+- `rewrites` — sends every path to `index.html` so client-side routing (deep links,
+  page refreshes on non-root routes) doesn't 404, mirroring the `try_files` rule in
+  `nginx.conf`.
+- `headers` — long-lived immutable caching for hashed JS/CSS/font/image assets, and
+  `no-cache` for `index.html` so a new deploy is always picked up immediately.
+
+Steps:
+
+1. In the Vercel dashboard, create a project pointing at this repo with **Root
+   Directory** set to `frontend/`.
+2. Under **Project Settings → Environment Variables**, add `API_BASE_URL` (see
+   [`.env.example`](.env.example)) if the app needs to reach a backend other than
+   the URL already committed in `environment.ts`.
+3. Firebase config isn't read from environment variables — before the first deploy,
+   make sure `src/environments/environment.ts` has the correct **production**
+   Firebase project values (see [Firebase Configuration](#firebase-configuration)).
+4. Push/deploy. Vercel runs `npm run build` per `vercel.json` and serves
+   `dist/firehawk-automobile/browser`.
 
 ## Available Scripts
 

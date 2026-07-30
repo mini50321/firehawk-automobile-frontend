@@ -30,7 +30,6 @@ import { filterCars } from '../../utils/filter-cars';
 import { carsToCsv } from '../../utils/cars-to-csv';
 import { CarFilters } from '../car-filters/car-filters';
 import { CarStats } from '../car-stats/car-stats';
-import { CarDetailsDialog } from '../car-details-dialog/car-details-dialog';
 import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
 import { FileDownload } from '../../../../core/services/file-download';
 import { Feedback } from '../../../../core/services/feedback';
@@ -211,7 +210,8 @@ export class CarTable implements AfterViewInit {
       });
   }
 
-  protected openDetails(car: Car): void {
+  protected async openDetails(car: Car): Promise<void> {
+    const { CarDetailsDialog } = await import('../car-details-dialog/car-details-dialog');
     this.dialog.open(CarDetailsDialog, {
       data: car,
       width: '480px',
