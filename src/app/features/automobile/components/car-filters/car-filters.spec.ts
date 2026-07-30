@@ -7,6 +7,8 @@ import {
   EMPTY_CAR_FILTER_CRITERIA,
 } from '../../models/car-filter-criteria.model';
 
+const STORAGE_KEY = 'firehawk-automobile.car-table-view-state';
+
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
     make: 'Toyota',
@@ -43,11 +45,13 @@ describe('CarFilters', () => {
   }
 
   beforeEach(() => {
+    localStorage.clear();
     vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    localStorage.clear();
   });
 
   it('should create', () => {
@@ -117,5 +121,40 @@ describe('CarFilters', () => {
     await vi.advanceTimersByTimeAsync(300);
 
     expect(emitted.at(-1)).toEqual(EMPTY_CAR_FILTER_CRITERIA);
+  });
+
+  describe('persistence', () => {
+    it('should seed the form from previously persisted filters', async () => {
+      const persisted = {
+        filters: { ...EMPTY_CAR_FILTER_CRITERIA, search: 'civic', origin: 'USA' as const },
+        sortActive: '',
+        sortDirection: '' as const,
+        pageIndex: 0,
+        pageSize: 10,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+
+      fixture = setup(cars);
+      const emitted: CarFilterCriteria[] = [];
+      fixture.componentInstance.filtersChange.subscribe((criteria) => emitted.push(criteria));
+      await vi.advanceTimersByTimeAsync(300);
+
+      const searchInput = fixture.nativeElement.querySelector(
+        'input[formControlName="search"]',
+      ) as HTMLInputElement;
+      expect(searchInput.value).toBe('civic');
+      expect(emitted.at(-1)).toEqual(persisted.filters);
+    });
+
+    it('should persist criteria changes to storage', async () => {
+      fixture = setup(cars);
+      await vi.advanceTimersByTimeAsync(300);
+
+      fixture.componentInstance['form'].controls.search.setValue('corolla');
+      await vi.advanceTimersByTimeAsync(300);
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+      expect(stored.filters.search).toBe('corolla');
+    });
   });
 });

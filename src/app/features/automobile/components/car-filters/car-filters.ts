@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { Car, CarOrigin } from '../../models/car.model';
 import { CarFilterCriteria } from '../../models/car-filter-criteria.model';
+import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -37,6 +38,21 @@ function toCriteria(value: Partial<CarFiltersFormValue>): CarFilterCriteria {
   };
 }
 
+function toFormValue(criteria: CarFilterCriteria): CarFiltersFormValue {
+  return {
+    search: criteria.search,
+    origin: criteria.origin,
+    cylinders: criteria.cylinders,
+    modelYear: criteria.modelYear,
+    mpgMin: criteria.mpg.min,
+    mpgMax: criteria.mpg.max,
+    horsepowerMin: criteria.horsepower.min,
+    horsepowerMax: criteria.horsepower.max,
+    weightMin: criteria.weight.min,
+    weightMax: criteria.weight.max,
+  };
+}
+
 function distinctSorted<T>(values: T[], compare?: (a: T, b: T) => number): T[] {
   return Array.from(new Set(values)).sort(compare);
 }
@@ -58,6 +74,7 @@ export class CarFilters {
   readonly filtersChange = output<CarFilterCriteria>();
 
   private readonly formBuilder = inject(FormBuilder);
+  private readonly viewState = inject(CarTableViewStateStore);
 
   protected readonly form = this.formBuilder.group({
     search: this.formBuilder.control(''),
@@ -89,6 +106,10 @@ export class CarFilters {
   );
 
   constructor() {
+    // Seed the form from persisted state before wiring valueChanges, so the
+    // debounced pipeline's initial emission reflects the restored values.
+    this.form.reset(toFormValue(this.viewState.snapshot().filters));
+
     this.form.valueChanges
       .pipe(
         startWith(this.form.getRawValue()),
@@ -97,7 +118,10 @@ export class CarFilters {
         map((value) => toCriteria(value)),
         takeUntilDestroyed(),
       )
-      .subscribe((criteria) => this.filtersChange.emit(criteria));
+      .subscribe((criteria) => {
+        this.filtersChange.emit(criteria);
+        this.viewState.updateFilters(criteria);
+      });
   }
 
   protected resetFilters(): void {

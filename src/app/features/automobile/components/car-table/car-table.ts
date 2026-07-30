@@ -1,20 +1,21 @@
 import {
   AfterViewInit,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { catchError, map, of, startWith } from 'rxjs';
+import { catchError, map, merge, of, startWith } from 'rxjs';
 
 import { AutomobileRepository } from '../../services/automobile-repository';
 import { Car } from '../../models/car.model';
@@ -24,6 +25,7 @@ import {
 } from '../../models/car-filter-criteria.model';
 import { filterCars } from '../../utils/filter-cars';
 import { CarFilters } from '../car-filters/car-filters';
+import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
 
 type CarColumn =
   | 'make'
@@ -59,6 +61,8 @@ const EXTENDED_COLUMNS: CarColumn[] = [
   'weight',
 ];
 
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
+
 const INITIAL_STATE: CarsLoadState = { loading: true, cars: [], error: null };
 
 @Component({
@@ -78,6 +82,10 @@ const INITIAL_STATE: CarsLoadState = { loading: true, cars: [], error: null };
 export class CarTable implements AfterViewInit {
   private readonly repository = inject(AutomobileRepository);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly viewState = inject(CarTableViewStateStore);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
   protected readonly dataSource = new MatTableDataSource<Car>([]);
 
@@ -99,7 +107,7 @@ export class CarTable implements AfterViewInit {
   protected readonly loading = computed(() => this.state().loading);
   protected readonly error = computed(() => this.state().error);
 
-  protected readonly filterCriteria = signal<CarFilterCriteria>(EMPTY_CAR_FILTER_CRITERIA);
+  protected readonly filterCriteria = signal<CarFilterCriteria>(this.viewState.snapshot().filters);
   protected readonly hasActiveFilters = computed(
     () => JSON.stringify(this.filterCriteria()) !== JSON.stringify(EMPTY_CAR_FILTER_CRITERIA),
   );
@@ -127,7 +135,36 @@ export class CarTable implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+    const sort = this.sort();
+    const paginator = this.paginator();
+
+    this.dataSource.sort = sort;
+    this.dataSource.paginator = paginator;
+
+    // Deferred to a microtask: mutating `sort`/`paginator` synchronously here would
+    // change host bindings (e.g. MatSortHeader's aria-sort) mid change-detection cycle
+    // and trip NG0100. Re-attaching afterward makes MatTableDataSource recompute against
+    // the restored values — plain property writes alone don't notify it.
+    // The snapshot is read *inside* the callback (not captured beforehand) so that if
+    // the user interacts with sort/paginator before this fires, we don't clobber it.
+    Promise.resolve().then(() => {
+      const restored = this.viewState.snapshot();
+      sort.active = restored.sortActive;
+      sort.direction = restored.sortDirection;
+      paginator.pageIndex = Math.max(restored.pageIndex, 0);
+      paginator.pageSize = this.pageSizeOptions.includes(restored.pageSize)
+        ? restored.pageSize
+        : PAGE_SIZE_OPTIONS[1];
+
+      this.dataSource.sort = sort;
+      this.dataSource.paginator = paginator;
+    });
+
+    merge(sort.sortChange, paginator.page)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.viewState.updateSort(sort.active, sort.direction);
+        this.viewState.updatePage(paginator.pageIndex, paginator.pageSize);
+      });
   }
 }

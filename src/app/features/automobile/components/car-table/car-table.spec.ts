@@ -59,6 +59,14 @@ describe('CarTable', () => {
     return Array.from(root.querySelectorAll('tbody tr'));
   }
 
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('should create', () => {
     fixture = setup(of([]));
     fixture.detectChanges();
@@ -104,13 +112,14 @@ describe('CarTable', () => {
     fixture = setup(of(cars));
     fixture.detectChanges();
 
-    expect(bodyRows(fixture.nativeElement)).toHaveLength(10);
-
-    // MatTableDataSource syncs `paginator.length` in a microtask (to avoid
-    // ExpressionChangedAfterItHasBeenCheckedError), so it must be flushed
-    // before the paginator's next-page button becomes enabled.
+    // Restoring sort/pagination state, and MatTableDataSource syncing
+    // `paginator.length`, both happen in a deferred microtask (to avoid
+    // ExpressionChangedAfterItHasBeenCheckedError), so they must be flushed
+    // before asserting on rendered rows or paginator button state.
     await fixture.whenStable();
     fixture.detectChanges();
+
+    expect(bodyRows(fixture.nativeElement)).toHaveLength(10);
 
     const root = fixture.nativeElement as HTMLElement;
     const nextPageButton = root.querySelector<HTMLButtonElement>('button[aria-label="Next page"]');
@@ -121,13 +130,15 @@ describe('CarTable', () => {
     expect(bodyRows(fixture.nativeElement)).toHaveLength(5);
   });
 
-  it('should sort rows when a sortable header is clicked', () => {
+  it('should sort rows when a sortable header is clicked', async () => {
     const cars = [
       buildCar({ id: '1', make: 'Toyota' }),
       buildCar({ id: '2', make: 'Acura' }),
       buildCar({ id: '3', make: 'BMW' }),
     ];
     fixture = setup(of(cars));
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -225,6 +236,79 @@ describe('CarTable', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain('No automobiles match your filters.');
+    });
+  });
+
+  describe('persistence', () => {
+    const STORAGE_KEY = 'firehawk-automobile.car-table-view-state';
+
+    it('should restore sort and pagination from persisted state', async () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          filters: {
+            search: '',
+            origin: null,
+            cylinders: null,
+            modelYear: null,
+            mpg: { min: null, max: null },
+            horsepower: { min: null, max: null },
+            weight: { min: null, max: null },
+          },
+          sortActive: 'make',
+          sortDirection: 'desc',
+          pageIndex: 1,
+          pageSize: 5,
+        }),
+      );
+
+      const cars = Array.from({ length: 15 }, (_, i) =>
+        buildCar({ id: `${i}`, make: `Make${i.toString().padStart(2, '0')}` }),
+      );
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const rows = bodyRows(fixture.nativeElement);
+      expect(rows).toHaveLength(5);
+      expect(rows[0].querySelector('td')?.textContent).toContain('Make09');
+    });
+
+    it('should persist sort changes when a sortable header is clicked', () => {
+      const cars = [buildCar({ id: '1', make: 'Toyota' }), buildCar({ id: '2', make: 'Acura' })];
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      const makeHeader = Array.from(root.querySelectorAll<HTMLElement>('th.mat-sort-header')).find(
+        (th) => th.textContent?.trim() === 'Make',
+      );
+      makeHeader?.click();
+      fixture.detectChanges();
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+      expect(stored.sortActive).toBe('make');
+      expect(stored.sortDirection).toBe('asc');
+    });
+
+    it('should persist page changes when the paginator is used', async () => {
+      const cars = Array.from({ length: 15 }, (_, i) => buildCar({ id: `${i}` }));
+      fixture = setup(of(cars));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      const nextPageButton = root.querySelector<HTMLButtonElement>(
+        'button[aria-label="Next page"]',
+      );
+      nextPageButton?.click();
+      fixture.detectChanges();
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+      expect(stored.pageIndex).toBe(1);
+      expect(stored.pageSize).toBe(10);
     });
   });
 });
