@@ -48,4 +48,33 @@ describe('LocalStorage', () => {
 
     setItemSpy.mockRestore();
   });
+
+  it('should return null instead of throwing when the underlying storage read fails', () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+
+    expect(() => service.getItem('key')).not.toThrow();
+    expect(service.getItem('key')).toBeNull();
+
+    getItemSpy.mockRestore();
+  });
+
+  it('should not throw when the underlying storage remove fails', () => {
+    const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+
+    expect(() => service.removeItem('key')).not.toThrow();
+
+    removeItemSpy.mockRestore();
+  });
+
+  it('should round-trip falsy-but-valid values like false and 0, not treat them as missing', () => {
+    service.setItem('falseValue', false);
+    service.setItem('zeroValue', 0);
+
+    expect(service.getItem('falseValue')).toBe(false);
+    expect(service.getItem('zeroValue')).toBe(0);
+  });
 });

@@ -49,6 +49,73 @@ describe('CarTableViewStateStore', () => {
     expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
   });
 
+  describe('validation of otherwise well-shaped stored state', () => {
+    const validState = {
+      filters: EMPTY_CAR_FILTER_CRITERIA,
+      sortActive: 'price',
+      sortDirection: 'asc' as const,
+      pageIndex: 1,
+      pageSize: 25,
+    };
+
+    it('should accept a fully valid stored state as-is', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(validState));
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(validState);
+    });
+
+    it('should reject a state with an invalid sortDirection value', () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...validState, sortDirection: 'sideways' }),
+      );
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with a non-numeric pageIndex', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...validState, pageIndex: '1' }));
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with a non-numeric pageSize', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...validState, pageSize: null }));
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with a non-string sortActive', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...validState, sortActive: 42 }));
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with a missing filters object', () => {
+      const withoutFilters = {
+        sortActive: validState.sortActive,
+        sortDirection: validState.sortDirection,
+        pageIndex: validState.pageIndex,
+        pageSize: validState.pageSize,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutFilters));
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+  });
+
   it('should persist and reflect filter updates', () => {
     const store = TestBed.inject(CarTableViewStateStore);
     const filters = { ...EMPTY_CAR_FILTER_CRITERIA, search: 'corolla' };

@@ -124,4 +124,49 @@ describe('filterCars', () => {
     const criteria: CarFilterCriteria = { ...EMPTY_CAR_FILTER_CRITERIA, search: 'nonexistent' };
     expect(filterCars(cars, criteria)).toEqual([]);
   });
+
+  it('should return an empty array when given an empty car list, regardless of criteria', () => {
+    expect(filterCars([], EMPTY_CAR_FILTER_CRITERIA)).toEqual([]);
+    expect(filterCars([], { ...EMPTY_CAR_FILTER_CRITERIA, search: 'anything' })).toEqual([]);
+  });
+
+  it('should match when the search term only appears in the model, not the make', () => {
+    const criteria: CarFilterCriteria = { ...EMPTY_CAR_FILTER_CRITERIA, search: 'x5' };
+    expect(filterCars(cars, criteria)).toEqual([cars[2]]);
+  });
+
+  it('should treat range boundaries as inclusive on the minimum', () => {
+    // cars[2] has mpg 24; a min of exactly 24 should still match.
+    const criteria: CarFilterCriteria = {
+      ...EMPTY_CAR_FILTER_CRITERIA,
+      mpg: { min: 24, max: null },
+    };
+    expect(filterCars(cars, criteria)).toEqual([cars[0], cars[2]]);
+  });
+
+  it('should treat range boundaries as inclusive on the maximum', () => {
+    // cars[2] has mpg 24; a max of exactly 24 should still match.
+    const criteria: CarFilterCriteria = {
+      ...EMPTY_CAR_FILTER_CRITERIA,
+      mpg: { min: null, max: 24 },
+    };
+    expect(filterCars(cars, criteria)).toEqual([cars[1], cars[2]]);
+  });
+
+  it('should exclude a car just outside an inclusive boundary', () => {
+    const criteria: CarFilterCriteria = {
+      ...EMPTY_CAR_FILTER_CRITERIA,
+      mpg: { min: 25, max: null },
+    };
+    expect(filterCars(cars, criteria)).toEqual([cars[0]]);
+  });
+
+  it('should combine multiple range filters (MPG and horsepower) with AND semantics', () => {
+    const criteria: CarFilterCriteria = {
+      ...EMPTY_CAR_FILTER_CRITERIA,
+      mpg: { min: 20, max: null },
+      horsepower: { min: 300, max: null },
+    };
+    expect(filterCars(cars, criteria)).toEqual([cars[2]]);
+  });
 });

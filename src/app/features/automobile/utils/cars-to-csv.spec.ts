@@ -79,4 +79,23 @@ describe('carsToCsv', () => {
 
     expect(row).toContain('"Two\nTone"');
   });
+
+  it('should render zero-value numeric fields as "0", not omit them', () => {
+    const car = buildCar({ id: '1', mileage: 0, price: 0 });
+
+    const [, row] = carsToCsv([car]).split('\r\n');
+    const columns = row.split(',');
+
+    // Mileage is column index 5, Price is column index 6.
+    expect(columns[5]).toBe('0');
+    expect(columns[6]).toBe('0');
+  });
+
+  it('should not include the internal id field in the output', () => {
+    const car = buildCar({ id: 'internal-doc-id-should-not-leak' });
+
+    const csv = carsToCsv([car]);
+
+    expect(csv).not.toContain('internal-doc-id-should-not-leak');
+  });
 });

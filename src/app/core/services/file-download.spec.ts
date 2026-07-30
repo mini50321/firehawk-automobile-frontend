@@ -21,6 +21,10 @@ describe('FileDownload', () => {
     HTMLAnchorElement.prototype.click = clickSpy as typeof HTMLAnchorElement.prototype.click;
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
@@ -33,11 +37,32 @@ describe('FileDownload', () => {
     expect(blobSpy).toHaveBeenCalledWith(['a,b,c'], { type: 'text/csv' });
   });
 
-  it('should trigger a click on an anchor with the correct filename', () => {
+  it('should set the anchor download filename and href to the object URL before clicking', () => {
+    const createElementSpy = vi.spyOn(document, 'createElement');
+
     service.downloadTextFile('cars.csv', 'a,b,c', 'text/csv');
 
     expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    const anchorResult = createElementSpy.mock.results.find(
+      (result) => result.value instanceof HTMLAnchorElement,
+    );
+    const anchor = anchorResult?.value as HTMLAnchorElement;
+    expect(anchor.download).toBe('cars.csv');
+    expect(anchor.href).toContain('blob:mock-url');
+  });
+
+  it('should use the given filename for a different export', () => {
+    const createElementSpy = vi.spyOn(document, 'createElement');
+
+    service.downloadTextFile('inventory-report.csv', 'x,y,z', 'text/csv');
+
+    const anchorResult = createElementSpy.mock.results.find(
+      (result) => result.value instanceof HTMLAnchorElement,
+    );
+    const anchor = anchorResult?.value as HTMLAnchorElement;
+    expect(anchor.download).toBe('inventory-report.csv');
   });
 
   it('should revoke the object URL after triggering the download', () => {
