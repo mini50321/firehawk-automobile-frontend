@@ -17,17 +17,27 @@ README is for developers.
   Angular Material table.
 - **Server-side search & filtering** — debounced search by name plus filters for origin,
   cylinders, and an MPG range, all sent to the backend as query params and built with Reactive
-  Forms and RxJS.
+  Forms and RxJS. A text search and an MPG range can be combined freely in the UI even though the
+  backend can't serve both in one query (Firestore allows only one range filter per query) —
+  `AutomobileRepository.getCars` queries by search alone and applies the MPG range client-side, so
+  the combination just works instead of surfacing a 400.
 - **Automobile details dialog** — inspect a single record's full details.
 - **Summary statistics cards** — total count, average MPG, average horsepower, and average
   weight, computed over whatever the current search/filter currently has loaded.
 - **CSV export** — downloads the full (not just currently-loaded-page) matching result set
-  directly from the backend's `/cars/export` endpoint, honoring the current filters and sort.
+  directly from the backend's `/cars/export` endpoint, honoring the current filters and sort. If
+  a text search and an MPG range are both active — a combination the backend can't serve in one
+  Firestore query (see the backend README's Firestore composite indexes section) — it builds the
+  CSV client-side from the already-loaded, already-filtered rows instead (`utils/cars-to-csv.ts` +
+  `FileDownload.downloadText`).
 - **Add a car** — a simple form (`/add`) for adding a new automobile, gated behind a shared admin
   key (`core/services/admin-auth.ts`, sessionStorage-backed) since the backend has no
   user-account system. See [`USER_GUIDE.md`](USER_GUIDE.md) for the end-user walkthrough.
 - **Persisted view state** — search, filters, sort order, current page, and page size are saved
-  to `localStorage` and restored automatically on reload.
+  to `localStorage` and restored automatically on reload. Restored state is validated against the
+  *current* filter shape (`CarTableViewStateStore`'s `isValidFilters`), not just "is an object" —
+  state saved under a previous, incompatible schema (e.g. before a filter was renamed) is
+  discarded in favor of the default state rather than being passed through and crashing the page.
 - **Empty states & feedback** — contextual empty states (no data / no matches / load error) with
   a one-click "Reset Filters" action, and snack bar confirmations/errors for key actions.
 - **Responsive application shell** — collapsible sidenav + toolbar that adapts to
@@ -66,7 +76,7 @@ src/app/
       components/                # CarTable, CarFilters, CarStats, CarDetailsDialog, CarForm
       services/                  # AutomobileRepository, view-state store
       models/                    # Car, filter criteria, stats, and shared enum-option types
-      utils/                     # Pure functions: calculateCarStats
+      utils/                     # Pure functions: calculateCarStats, carsToCsv
 ```
 
 Cross-feature rule: `shared` and `core` never import from `features`; features never
@@ -138,9 +148,11 @@ npm run format:check # Prettier check (use `npm run format` to auto-fix)
 ```
 
 The suite covers the REST API client (envelope unwrapping, custom headers), the error
-interceptor, the automobile repository (query-param mapping, cursor-pagination looping,
-`createCar`), admin-key persistence (`AdminAuth`), local storage persistence, and component
-behavior — including the add-car form's unlock flow and its handling of a rejected admin key.
+interceptor, the automobile repository (query-param mapping, cursor-pagination looping, the
+search+MPG-range client-side fallback, `createCar`), the CSV-generation util, admin-key
+persistence (`AdminAuth`), local storage persistence (including rejecting state saved under a
+stale schema), and component behavior — including the add-car form's unlock flow and its handling
+of a rejected admin key.
 
 ## Docker
 
