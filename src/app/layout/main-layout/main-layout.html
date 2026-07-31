@@ -7,7 +7,25 @@
     [opened]="!isHandset()"
   >
     <mat-nav-list>
-      <!-- Navigation links will be added once features exist. -->
+      <a
+        mat-list-item
+        routerLink="/"
+        routerLinkActive="shell-nav-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidenavOnHandset()"
+      >
+        <mat-icon matListItemIcon>directions_car</mat-icon>
+        <span matListItemTitle>Automobiles</span>
+      </a>
+      <a
+        mat-list-item
+        routerLink="/add"
+        routerLinkActive="shell-nav-active"
+        (click)="closeSidenavOnHandset()"
+      >
+        <mat-icon matListItemIcon>add_circle_outline</mat-icon>
+        <span matListItemTitle>Add a Car</span>
+      </a>
     </mat-nav-list>
   </mat-sidenav>
 

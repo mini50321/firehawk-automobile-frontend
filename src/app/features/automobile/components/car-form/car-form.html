@@ -1,0 +1,99 @@
+<div class="car-form-page">
+  <div class="car-form-header">
+    <h1>Add a Car</h1>
+    <a mat-stroked-button routerLink="/">
+      <mat-icon>arrow_back</mat-icon>
+      Back to list
+    </a>
+  </div>
+
+  @if (!hasKey()) {
+    <mat-card appearance="outlined" class="car-form-unlock">
+      <mat-card-content>
+        <p>Adding a car requires the admin key. Ask whoever set up this site if you don't have it.</p>
+        <form [formGroup]="keyForm" (ngSubmit)="unlock()" class="car-form-unlock-form">
+          <mat-form-field appearance="outline" class="car-form-unlock-field">
+            <mat-label>Admin key</mat-label>
+            <input matInput type="password" formControlName="key" autocomplete="off" />
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit" [disabled]="keyForm.invalid">
+            Unlock
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="car-form">
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Automobile Details</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="car-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" placeholder="e.g. toyota corona" />
+            @if (form.controls.name.invalid && form.controls.name.touched) {
+              <mat-error>Name is required.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Origin</mat-label>
+            <mat-select formControlName="origin">
+              @for (option of originOptions; track option) {
+                <mat-option [value]="option">{{ option }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>MPG</mat-label>
+            <input matInput type="number" formControlName="mpg" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cylinders</mat-label>
+            <input matInput type="number" formControlName="cylinders" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Displacement</mat-label>
+            <input matInput type="number" step="0.1" formControlName="displacement" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Horsepower</mat-label>
+            <input matInput type="number" formControlName="horsepower" />
+            <mat-hint>Leave blank if unknown.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Weight (lbs)</mat-label>
+            <input matInput type="number" formControlName="weight" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Acceleration</mat-label>
+            <input matInput type="number" step="0.1" formControlName="acceleration" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Model year</mat-label>
+            <input matInput type="number" formControlName="modelYear" />
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="car-form-actions">
+        <a mat-stroked-button routerLink="/">Cancel</a>
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Add Car
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

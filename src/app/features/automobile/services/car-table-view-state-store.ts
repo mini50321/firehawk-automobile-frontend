@@ -9,14 +9,44 @@ import { CarFilterCriteria } from '../models/car-filter-criteria.model';
 
 const STORAGE_KEY = 'firehawk-automobile.car-table-view-state';
 
+/** Numbers stored as `null` (an explicit "no bound") vs. genuinely absent both mean "unset" here. */
+function isNullableNumber(value: unknown): boolean {
+  return value === null || typeof value === 'number';
+}
+
+/**
+ * Validates the *current* `CarFilterCriteria` shape, not just "is an object" — a browser that
+ * still has state persisted from a previous version of this app (a different filter schema) must
+ * have that state discarded rather than passed through as-is, since a shape mismatch (e.g. a
+ * missing `mpg` field) would otherwise throw deep inside `CarFilters` and take the whole page down
+ * with it (see the `mpg.min` crash this was written to fix).
+ */
+function isValidFilters(value: unknown): value is CarFilterCriteria {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const filters = value as Partial<CarFilterCriteria>;
+  return (
+    typeof filters.search === 'string' &&
+    (filters.origin === null ||
+      filters.origin === 'usa' ||
+      filters.origin === 'europe' ||
+      filters.origin === 'japan') &&
+    isNullableNumber(filters.cylinders) &&
+    typeof filters.mpg === 'object' &&
+    filters.mpg !== null &&
+    isNullableNumber(filters.mpg.min) &&
+    isNullableNumber(filters.mpg.max)
+  );
+}
+
 function isValidState(value: unknown): value is CarTableViewState {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
   const state = value as Partial<CarTableViewState>;
   return (
-    typeof state.filters === 'object' &&
-    state.filters !== null &&
+    isValidFilters(state.filters) &&
     typeof state.sortActive === 'string' &&
     (state.sortDirection === 'asc' ||
       state.sortDirection === 'desc' ||

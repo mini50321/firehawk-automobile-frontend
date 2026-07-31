@@ -41,4 +41,28 @@ describe('FileDownload', () => {
 
     expect(document.querySelector('a[href*="cars/export"]')).toBeNull();
   });
+
+  describe('downloadText', () => {
+    it('should create a blob URL, set it as the anchor download target, and click it', () => {
+      const createObjectURLSpy = vi
+        .spyOn(URL, 'createObjectURL')
+        .mockReturnValue('blob:mock-url');
+      const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+      service.downloadText('automobiles.csv', 'id,name\n1,toyota');
+
+      expect(createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:mock-url');
+    });
+
+    it('should not leave the anchor attached to the document', () => {
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+      service.downloadText('automobiles.csv', 'id,name\n1,toyota');
+
+      expect(document.querySelector('a[download="automobiles.csv"]')).toBeNull();
+    });
+  });
 });

@@ -1,6 +1,6 @@
 export interface CarStats {
   totalCount: number;
-  averagePrice: number;
+  averageMpg: number;
   averageHorsepower: number;
-  averageCityMpg: number;
+  averageWeight: number;
 }

@@ -10,3 +10,7 @@
 .shell-main {
   padding: 1rem;
 }
+
+.shell-nav-active {
+  --mdc-list-list-item-container-color: var(--mat-sys-secondary-container);
+}

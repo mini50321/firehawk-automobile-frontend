@@ -50,6 +50,14 @@ describe('Api', () => {
     expect(await promise).toEqual({ id: 'new-1' });
   });
 
+  it('sends custom headers on POST when provided', () => {
+    api.post('/cars', { make: 'toyota' }, { headers: { 'X-Admin-Key': 'secret' } }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/cars'));
+    expect(req.request.headers.get('X-Admin-Key')).toBe('secret');
+    req.flush({ success: true, data: {} });
+  });
+
   it('unwraps the envelope on DELETE', async () => {
     const promise = firstValueFrom(api.delete<null>('/cars/1'));
 

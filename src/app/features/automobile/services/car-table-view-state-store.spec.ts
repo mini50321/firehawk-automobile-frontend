@@ -114,6 +114,52 @@ describe('CarTableViewStateStore', () => {
 
       expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
     });
+
+    it('should reject filters persisted under a previous, incompatible schema instead of passing them through', () => {
+      // Regression test: a browser with state saved before the filter schema changed from
+      // {fuelType, bodyStyle, price: {min,max}, ...} to {origin, cylinders, mpg: {min,max}} must
+      // have that stale state discarded, not handed to CarFilters as-is — a missing `mpg` field
+      // throws deep inside its constructor (`criteria.mpg.min`) and takes the whole page down.
+      const staleFilters = {
+        search: 'civic',
+        fuelType: 'gas',
+        bodyStyle: 'sedan',
+        price: { min: 5000, max: null },
+      };
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...validState, filters: staleFilters }),
+      );
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with an invalid origin value in filters', () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...validState,
+          filters: { ...EMPTY_CAR_FILTER_CRITERIA, origin: 'germany' },
+        }),
+      );
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
+
+    it('should reject a state with a non-object mpg field in filters', () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...validState, filters: { ...EMPTY_CAR_FILTER_CRITERIA, mpg: null } }),
+      );
+
+      const store = TestBed.inject(CarTableViewStateStore);
+
+      expect(store.snapshot()).toEqual(DEFAULT_CAR_TABLE_VIEW_STATE);
+    });
   });
 
   it('should persist and reflect filter updates', () => {

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 
 import { Api } from '../../../core/services/api';
 import { Car } from '../models/car.model';
@@ -28,18 +28,29 @@ const EXPORT_PATH = '/cars/export';
  */
 const MAX_PAGE_LIMIT = 100;
 
+/**
+ * Firestore allows only one range (inequality) filter per query — a name-prefix search (`q`) and
+ * an MPG range (`minMpg`/`maxMpg`) both need one, so the backend rejects the combination with a
+ * 400 rather than let it silently misbehave. `getCars` and `buildExportUrl`'s caller both work
+ * around this the same way: drop the MPG range from the server query and apply it client-side.
+ */
+export function hasSearchMpgConflict(criteria: CarFilterCriteria): boolean {
+  return criteria.search.trim().length > 0 && (criteria.mpg.min !== null || criteria.mpg.max !== null);
+}
+
+function withinMpgRange(mpg: number, range: CarFilterCriteria['mpg']): boolean {
+  return (range.min === null || mpg >= range.min) && (range.max === null || mpg <= range.max);
+}
+
 function toQueryParams(criteria: CarFilterCriteria, sort: CarSort): QueryParams {
   const params: QueryParams = {};
   const search = criteria.search.trim();
 
   if (search) params['q'] = search;
-  if (criteria.fuelType) params['fuelType'] = criteria.fuelType;
-  if (criteria.aspiration) params['aspiration'] = criteria.aspiration;
-  if (criteria.bodyStyle) params['bodyStyle'] = criteria.bodyStyle;
-  if (criteria.driveWheels) params['driveWheels'] = criteria.driveWheels;
-  if (criteria.engineLocation) params['engineLocation'] = criteria.engineLocation;
-  if (criteria.price.min !== null) params['minPrice'] = criteria.price.min;
-  if (criteria.price.max !== null) params['maxPrice'] = criteria.price.max;
+  if (criteria.origin) params['origin'] = criteria.origin;
+  if (criteria.cylinders !== null) params['cylinders'] = criteria.cylinders;
+  if (criteria.mpg.min !== null) params['minMpg'] = criteria.mpg.min;
+  if (criteria.mpg.max !== null) params['maxMpg'] = criteria.mpg.max;
   if (sort.sortBy) params['sortBy'] = sort.sortBy;
   if (sort.sortOrder) params['sortOrder'] = sort.sortOrder;
 
@@ -62,11 +73,23 @@ export class AutomobileRepository {
     criteria: CarFilterCriteria = EMPTY_CAR_FILTER_CRITERIA,
     sort: CarSort = {},
   ): Observable<Car[]> {
+    if (hasSearchMpgConflict(criteria)) {
+      const searchOnly: CarFilterCriteria = { ...criteria, mpg: { min: null, max: null } };
+      return this.fetchAllPages(toQueryParams(searchOnly, sort)).pipe(
+        map((cars) => cars.filter((car) => withinMpgRange(car.mpg, criteria.mpg))),
+      );
+    }
+
     return this.fetchAllPages(toQueryParams(criteria, sort));
   }
 
   getCarById(id: string): Observable<Car> {
     return this.api.get<Car>(`${CARS_PATH}/${encodeURIComponent(id)}`);
+  }
+
+  /** Requires the admin key (see `AdminAuth`) — the backend rejects this with 401 without it. */
+  createCar(data: Omit<Car, 'id'>, adminKey: string): Observable<Car> {
+    return this.api.post<Car>(CARS_PATH, data, { headers: { 'X-Admin-Key': adminKey } });
   }
 
   /** Full URL for a direct browser download of the CSV export, honoring the same search/filters/sort. */

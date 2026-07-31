@@ -1,39 +1,22 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 
-import { AutomobileRepository } from './automobile-repository';
+import { AutomobileRepository, hasSearchMpgConflict } from './automobile-repository';
 import { Api } from '../../../core/services/api';
 import { Car } from '../models/car.model';
 import { EMPTY_CAR_FILTER_CRITERIA } from '../models/car-filter-criteria.model';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
-    symboling: 0,
-    normalizedLosses: 100,
-    make: 'toyota',
-    fuelType: 'gas',
-    aspiration: 'std',
-    numOfDoors: 4,
-    bodyStyle: 'sedan',
-    driveWheels: 'fwd',
-    engineLocation: 'front',
-    wheelBase: 95,
-    length: 170,
-    width: 65,
-    height: 55,
-    curbWeight: 2200,
-    engineType: 'ohc',
-    numOfCylinders: 4,
-    engineSize: 120,
-    fuelSystem: 'mpfi',
-    bore: 3.2,
-    stroke: 3.1,
-    compressionRatio: 9.5,
-    horsepower: 100,
-    peakRpm: 5000,
-    cityMpg: 25,
-    highwayMpg: 30,
-    price: 15000,
+    name: 'chevrolet chevelle malibu',
+    mpg: 18,
+    cylinders: 8,
+    displacement: 307,
+    horsepower: 130,
+    weight: 3504,
+    acceleration: 12,
+    modelYear: 1970,
+    origin: 'usa',
     ...overrides,
   };
 }
@@ -42,13 +25,15 @@ describe('AutomobileRepository', () => {
   let repository: AutomobileRepository;
   let api: {
     get: ReturnType<typeof vi.fn>;
+    post: ReturnType<typeof vi.fn>;
     buildUrl: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     api = {
       get: vi.fn(),
-      buildUrl: vi.fn().mockReturnValue('https://api.example.com/cars/export?fuelType=gas'),
+      post: vi.fn(),
+      buildUrl: vi.fn().mockReturnValue('https://api.example.com/cars/export?origin=usa'),
     };
 
     TestBed.configureTestingModule({
@@ -96,34 +81,93 @@ describe('AutomobileRepository', () => {
         repository.getCars({
           ...EMPTY_CAR_FILTER_CRITERIA,
           search: '  civic  ',
-          fuelType: 'gas',
-          bodyStyle: 'sedan',
-          price: { min: 5000, max: 20000 },
+          origin: 'japan',
+          cylinders: 4,
         }),
       );
 
       expect(api.get).toHaveBeenCalledWith('/cars', {
         q: 'civic',
-        fuelType: 'gas',
-        bodyStyle: 'sedan',
-        minPrice: 5000,
-        maxPrice: 20000,
+        origin: 'japan',
+        cylinders: 4,
         limit: 100,
       });
+    });
+
+    it('maps an MPG range to minMpg/maxMpg when there is no text search', async () => {
+      api.get.mockReturnValue(of({ data: [], nextCursor: null, hasMore: false }));
+
+      await firstValueFrom(
+        repository.getCars({ ...EMPTY_CAR_FILTER_CRITERIA, mpg: { min: 20, max: 35 } }),
+      );
+
+      expect(api.get).toHaveBeenCalledWith('/cars', { minMpg: 20, maxMpg: 35, limit: 100 });
     });
 
     it('maps sort params to sortBy/sortOrder', async () => {
       api.get.mockReturnValue(of({ data: [], nextCursor: null, hasMore: false }));
 
       await firstValueFrom(
-        repository.getCars(EMPTY_CAR_FILTER_CRITERIA, { sortBy: 'price', sortOrder: 'desc' }),
+        repository.getCars(EMPTY_CAR_FILTER_CRITERIA, { sortBy: 'mpg', sortOrder: 'desc' }),
       );
 
       expect(api.get).toHaveBeenCalledWith('/cars', {
-        sortBy: 'price',
+        sortBy: 'mpg',
         sortOrder: 'desc',
         limit: 100,
       });
+    });
+
+    describe('when a text search and an MPG range are combined', () => {
+      // Firestore allows only one range filter per query — `q` (a prefix range on `name`) and an
+      // MPG range both need one, so the backend rejects that combination with a 400. Regression
+      // test for that: getCars must query by search alone and apply the MPG range itself, never
+      // surfacing the conflict to the caller.
+      it('queries the backend by search only, omitting minMpg/maxMpg', async () => {
+        api.get.mockReturnValue(of({ data: [], nextCursor: null, hasMore: false }));
+
+        await firstValueFrom(
+          repository.getCars({
+            ...EMPTY_CAR_FILTER_CRITERIA,
+            search: 'civic',
+            mpg: { min: 20, max: 35 },
+          }),
+        );
+
+        expect(api.get).toHaveBeenCalledWith('/cars', { q: 'civic', limit: 100 });
+      });
+
+      it('applies the MPG range client-side over the search results', async () => {
+        const inRange = buildCar({ id: '1', name: 'honda civic', mpg: 30 });
+        const belowRange = buildCar({ id: '2', name: 'honda civic wagon', mpg: 10 });
+        const aboveRange = buildCar({ id: '3', name: 'honda civic si', mpg: 40 });
+        api.get.mockReturnValue(
+          of({ data: [inRange, belowRange, aboveRange], nextCursor: null, hasMore: false }),
+        );
+
+        const cars = await firstValueFrom(
+          repository.getCars({
+            ...EMPTY_CAR_FILTER_CRITERIA,
+            search: 'civic',
+            mpg: { min: 20, max: 35 },
+          }),
+        );
+
+        expect(cars).toEqual([inRange]);
+      });
+    });
+  });
+
+  describe('hasSearchMpgConflict', () => {
+    it('is true only when both a search term and at least one MPG bound are set', () => {
+      expect(
+        hasSearchMpgConflict({ ...EMPTY_CAR_FILTER_CRITERIA, search: 'civic', mpg: { min: 20, max: null } }),
+      ).toBe(true);
+      expect(hasSearchMpgConflict({ ...EMPTY_CAR_FILTER_CRITERIA, search: 'civic' })).toBe(false);
+      expect(
+        hasSearchMpgConflict({ ...EMPTY_CAR_FILTER_CRITERIA, mpg: { min: 20, max: null } }),
+      ).toBe(false);
+      expect(hasSearchMpgConflict(EMPTY_CAR_FILTER_CRITERIA)).toBe(false);
     });
   });
 
@@ -139,19 +183,34 @@ describe('AutomobileRepository', () => {
     });
   });
 
+  describe('createCar', () => {
+    it('posts to /cars with the admin key as a header', async () => {
+      const created = buildCar({ id: 'new-1' });
+      api.post.mockReturnValue(of(created));
+      const { id: _id, ...payload } = created;
+
+      const result = await firstValueFrom(repository.createCar(payload, 'secret-key'));
+
+      expect(api.post).toHaveBeenCalledWith('/cars', payload, {
+        headers: { 'X-Admin-Key': 'secret-key' },
+      });
+      expect(result).toEqual(created);
+    });
+  });
+
   describe('buildExportUrl', () => {
     it('builds the export URL with the same filter/sort params as getCars', () => {
       const url = repository.buildExportUrl(
-        { ...EMPTY_CAR_FILTER_CRITERIA, fuelType: 'gas' },
-        { sortBy: 'price', sortOrder: 'asc' },
+        { ...EMPTY_CAR_FILTER_CRITERIA, origin: 'usa' },
+        { sortBy: 'mpg', sortOrder: 'asc' },
       );
 
       expect(api.buildUrl).toHaveBeenCalledWith('/cars/export', {
-        fuelType: 'gas',
-        sortBy: 'price',
+        origin: 'usa',
+        sortBy: 'mpg',
         sortOrder: 'asc',
       });
-      expect(url).toBe('https://api.example.com/cars/export?fuelType=gas');
+      expect(url).toBe('https://api.example.com/cars/export?origin=usa');
     });
   });
 });

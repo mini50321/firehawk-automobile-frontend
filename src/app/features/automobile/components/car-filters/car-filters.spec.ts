@@ -70,28 +70,27 @@ describe('CarFilters', () => {
     expect(emitted).toHaveLength(1);
   });
 
-  it('should emit the selected fuel type and price range', async () => {
+  it('should emit the selected origin and mpg range', async () => {
     fixture = setup();
     const emitted: CarFilterCriteria[] = [];
     fixture.componentInstance.filtersChange.subscribe((criteria) => emitted.push(criteria));
     await vi.advanceTimersByTimeAsync(300);
 
-    fixture.componentInstance['form'].patchValue({ fuelType: 'diesel', priceMin: 10000 });
+    fixture.componentInstance['form'].patchValue({ origin: 'japan', mpgMin: 20 });
     await vi.advanceTimersByTimeAsync(300);
 
     expect(emitted.at(-1)).toEqual({
       ...EMPTY_CAR_FILTER_CRITERIA,
-      fuelType: 'diesel',
-      price: { min: 10000, max: null },
+      origin: 'japan',
+      mpg: { min: 20, max: null },
     });
   });
 
   it('should expose the fixed enum options for each select', () => {
     fixture = setup();
 
-    expect(fixture.componentInstance['fuelTypeOptions']).toEqual(['gas', 'diesel']);
-    expect(fixture.componentInstance['aspirationOptions']).toEqual(['std', 'turbo']);
-    expect(fixture.componentInstance['driveWheelsOptions']).toEqual(['4wd', 'fwd', 'rwd']);
+    expect(fixture.componentInstance['originOptions']).toEqual(['usa', 'europe', 'japan']);
+    expect(fixture.componentInstance['cylinderOptions']).toEqual([3, 4, 5, 6, 8]);
   });
 
   it('should reset the form when resetFilters is invoked', async () => {
@@ -113,7 +112,7 @@ describe('CarFilters', () => {
   describe('persistence', () => {
     it('should seed the form from previously persisted filters', async () => {
       const persisted = {
-        filters: { ...EMPTY_CAR_FILTER_CRITERIA, search: 'civic', fuelType: 'gas' as const },
+        filters: { ...EMPTY_CAR_FILTER_CRITERIA, search: 'civic', origin: 'japan' as const },
         sortActive: '',
         sortDirection: '' as const,
         pageIndex: 0,

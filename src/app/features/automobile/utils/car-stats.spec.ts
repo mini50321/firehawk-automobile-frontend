@@ -3,32 +3,15 @@ import { Car } from '../models/car.model';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
-    symboling: 0,
-    normalizedLosses: 100,
-    make: 'toyota',
-    fuelType: 'gas',
-    aspiration: 'std',
-    numOfDoors: 4,
-    bodyStyle: 'sedan',
-    driveWheels: 'fwd',
-    engineLocation: 'front',
-    wheelBase: 95,
-    length: 170,
-    width: 65,
-    height: 55,
-    curbWeight: 2200,
-    engineType: 'ohc',
-    numOfCylinders: 4,
-    engineSize: 120,
-    fuelSystem: 'mpfi',
-    bore: 3.2,
-    stroke: 3.1,
-    compressionRatio: 9.5,
-    horsepower: 100,
-    peakRpm: 5000,
-    cityMpg: 25,
-    highwayMpg: 30,
-    price: 15000,
+    name: 'chevrolet chevelle malibu',
+    mpg: 18,
+    cylinders: 8,
+    displacement: 307,
+    horsepower: 130,
+    weight: 3504,
+    acceleration: 12,
+    modelYear: 1970,
+    origin: 'usa',
     ...overrides,
   };
 }
@@ -37,62 +20,61 @@ describe('calculateCarStats', () => {
   it('should return all zeros for an empty list', () => {
     expect(calculateCarStats([])).toEqual({
       totalCount: 0,
-      averagePrice: 0,
+      averageMpg: 0,
       averageHorsepower: 0,
-      averageCityMpg: 0,
+      averageWeight: 0,
     });
   });
 
   it('should return the car itself as the averages for a single car', () => {
-    const car = buildCar({ id: '1', price: 22000, horsepower: 150, cityMpg: 28 });
+    const car = buildCar({ id: '1', mpg: 22, horsepower: 150, weight: 2800 });
 
     expect(calculateCarStats([car])).toEqual({
       totalCount: 1,
-      averagePrice: 22000,
+      averageMpg: 22,
       averageHorsepower: 150,
-      averageCityMpg: 28,
+      averageWeight: 2800,
     });
   });
 
   it('should compute the total count and averages across multiple cars', () => {
     const cars = [
-      buildCar({ id: '1', price: 10000, horsepower: 100, cityMpg: 20 }),
-      buildCar({ id: '2', price: 20000, horsepower: 200, cityMpg: 30 }),
-      buildCar({ id: '3', price: 30000, horsepower: 300, cityMpg: 40 }),
+      buildCar({ id: '1', mpg: 10, horsepower: 100, weight: 2000 }),
+      buildCar({ id: '2', mpg: 20, horsepower: 200, weight: 3000 }),
+      buildCar({ id: '3', mpg: 30, horsepower: 300, weight: 4000 }),
     ];
 
     expect(calculateCarStats(cars)).toEqual({
       totalCount: 3,
-      averagePrice: 20000,
+      averageMpg: 20,
       averageHorsepower: 200,
-      averageCityMpg: 30,
+      averageWeight: 3000,
     });
   });
 
   it('should not round fractional averages', () => {
     const cars = [
-      buildCar({ id: '1', price: 10000, horsepower: 100, cityMpg: 20 }),
-      buildCar({ id: '2', price: 10001, horsepower: 101, cityMpg: 21 }),
+      buildCar({ id: '1', mpg: 10, horsepower: 100, weight: 2000 }),
+      buildCar({ id: '2', mpg: 11, horsepower: 101, weight: 2001 }),
     ];
 
     const stats = calculateCarStats(cars);
 
-    expect(stats.averagePrice).toBeCloseTo(10000.5);
+    expect(stats.averageMpg).toBeCloseTo(10.5);
     expect(stats.averageHorsepower).toBeCloseTo(100.5);
-    expect(stats.averageCityMpg).toBeCloseTo(20.5);
+    expect(stats.averageWeight).toBeCloseTo(2000.5);
   });
 
-  it('should exclude null price/horsepower from their averages rather than treating them as zero', () => {
+  it('should exclude a null horsepower from its average rather than treating it as zero', () => {
     const cars = [
-      buildCar({ id: '1', price: null, horsepower: null, cityMpg: 20 }),
-      buildCar({ id: '2', price: 20000, horsepower: 200, cityMpg: 30 }),
+      buildCar({ id: '1', horsepower: null, mpg: 20 }),
+      buildCar({ id: '2', horsepower: 200, mpg: 30 }),
     ];
 
     const stats = calculateCarStats(cars);
 
     expect(stats.totalCount).toBe(2);
-    expect(stats.averagePrice).toBe(20000);
     expect(stats.averageHorsepower).toBe(200);
-    expect(stats.averageCityMpg).toBe(25);
+    expect(stats.averageMpg).toBe(25);
   });
 });

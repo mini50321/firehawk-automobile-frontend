@@ -7,59 +7,37 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
-import {
-  Aspiration,
-  BodyStyle,
-  DriveWheels,
-  EngineLocation,
-  FuelType,
-} from '../../models/car.model';
+import { Origin } from '../../models/car.model';
+import { CYLINDER_OPTIONS, ORIGIN_OPTIONS } from '../../models/car-options.model';
 import { CarFilterCriteria } from '../../models/car-filter-criteria.model';
 import { CarTableViewStateStore } from '../../services/car-table-view-state-store';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
-// Fixed enums straight from the backend's Automobile model — unlike the old origin/cylinder/year
-// dropdowns, these don't need to be derived from whatever data happens to be loaded.
-const FUEL_TYPE_OPTIONS: FuelType[] = ['gas', 'diesel'];
-const ASPIRATION_OPTIONS: Aspiration[] = ['std', 'turbo'];
-const BODY_STYLE_OPTIONS: BodyStyle[] = ['hardtop', 'wagon', 'sedan', 'hatchback', 'convertible'];
-const DRIVE_WHEELS_OPTIONS: DriveWheels[] = ['4wd', 'fwd', 'rwd'];
-const ENGINE_LOCATION_OPTIONS: EngineLocation[] = ['front', 'rear'];
-
 interface CarFiltersFormValue {
   search: string | null;
-  fuelType: FuelType | null;
-  aspiration: Aspiration | null;
-  bodyStyle: BodyStyle | null;
-  driveWheels: DriveWheels | null;
-  engineLocation: EngineLocation | null;
-  priceMin: number | null;
-  priceMax: number | null;
+  origin: Origin | null;
+  cylinders: number | null;
+  mpgMin: number | null;
+  mpgMax: number | null;
 }
 
 function toCriteria(value: Partial<CarFiltersFormValue>): CarFilterCriteria {
   return {
     search: value.search ?? '',
-    fuelType: value.fuelType ?? null,
-    aspiration: value.aspiration ?? null,
-    bodyStyle: value.bodyStyle ?? null,
-    driveWheels: value.driveWheels ?? null,
-    engineLocation: value.engineLocation ?? null,
-    price: { min: value.priceMin ?? null, max: value.priceMax ?? null },
+    origin: value.origin ?? null,
+    cylinders: value.cylinders ?? null,
+    mpg: { min: value.mpgMin ?? null, max: value.mpgMax ?? null },
   };
 }
 
 function toFormValue(criteria: CarFilterCriteria): CarFiltersFormValue {
   return {
     search: criteria.search,
-    fuelType: criteria.fuelType,
-    aspiration: criteria.aspiration,
-    bodyStyle: criteria.bodyStyle,
-    driveWheels: criteria.driveWheels,
-    engineLocation: criteria.engineLocation,
-    priceMin: criteria.price.min,
-    priceMax: criteria.price.max,
+    origin: criteria.origin,
+    cylinders: criteria.cylinders,
+    mpgMin: criteria.mpg.min,
+    mpgMax: criteria.mpg.max,
   };
 }
 
@@ -81,21 +59,15 @@ export class CarFilters {
   private readonly formBuilder = inject(FormBuilder);
   private readonly viewState = inject(CarTableViewStateStore);
 
-  protected readonly fuelTypeOptions = FUEL_TYPE_OPTIONS;
-  protected readonly aspirationOptions = ASPIRATION_OPTIONS;
-  protected readonly bodyStyleOptions = BODY_STYLE_OPTIONS;
-  protected readonly driveWheelsOptions = DRIVE_WHEELS_OPTIONS;
-  protected readonly engineLocationOptions = ENGINE_LOCATION_OPTIONS;
+  protected readonly originOptions = ORIGIN_OPTIONS;
+  protected readonly cylinderOptions = CYLINDER_OPTIONS;
 
   protected readonly form = this.formBuilder.group({
     search: this.formBuilder.control(''),
-    fuelType: this.formBuilder.control<FuelType | null>(null),
-    aspiration: this.formBuilder.control<Aspiration | null>(null),
-    bodyStyle: this.formBuilder.control<BodyStyle | null>(null),
-    driveWheels: this.formBuilder.control<DriveWheels | null>(null),
-    engineLocation: this.formBuilder.control<EngineLocation | null>(null),
-    priceMin: this.formBuilder.control<number | null>(null),
-    priceMax: this.formBuilder.control<number | null>(null),
+    origin: this.formBuilder.control<Origin | null>(null),
+    cylinders: this.formBuilder.control<number | null>(null),
+    mpgMin: this.formBuilder.control<number | null>(null),
+    mpgMax: this.formBuilder.control<number | null>(null),
   });
 
   constructor() {

@@ -5,19 +5,15 @@ import { Car } from '../../models/car.model';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
-    make: 'Toyota',
-    model: 'Corolla',
-    year: 2020,
-    vin: '1HGCM82633A000000',
-    color: 'Blue',
-    mileage: 10000,
-    price: 20000,
-    status: 'available',
-    origin: 'Japan',
-    cylinders: 4,
-    mpg: 30,
-    horsepower: 140,
-    weight: 3000,
+    name: 'chevrolet chevelle malibu',
+    mpg: 18,
+    cylinders: 8,
+    displacement: 307,
+    horsepower: 130,
+    weight: 3504,
+    acceleration: 12,
+    modelYear: 1970,
+    origin: 'usa',
     ...overrides,
   };
 }

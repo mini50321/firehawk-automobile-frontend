@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { CurrencyPipe, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { catchError, map, merge, of, startWith, switchMap } from 'rxjs';
 
-import { AutomobileRepository } from '../../services/automobile-repository';
+import { AutomobileRepository, hasSearchMpgConflict } from '../../services/automobile-repository';
 import { Car } from '../../models/car.model';
 import {
   CarFilterCriteria,
@@ -32,20 +32,18 @@ import { CarTableViewStateStore } from '../../services/car-table-view-state-stor
 import { FileDownload } from '../../../../core/services/file-download';
 import { Feedback } from '../../../../core/services/feedback';
 import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
+import { carsToCsv } from '../../utils/cars-to-csv';
 
 type CarColumn =
-  | 'make'
-  | 'bodyStyle'
-  | 'price'
+  | 'name'
+  | 'origin'
+  | 'mpg'
   | 'horsepower'
-  | 'fuelType'
-  | 'aspiration'
-  | 'driveWheels'
-  | 'numOfCylinders'
-  | 'engineType'
-  | 'cityMpg'
-  | 'highwayMpg'
-  | 'curbWeight';
+  | 'cylinders'
+  | 'displacement'
+  | 'weight'
+  | 'acceleration'
+  | 'modelYear';
 
 interface CarsLoadState {
   loading: boolean;
@@ -59,16 +57,13 @@ interface EmptyStateContent {
   message: string;
 }
 
-const CORE_COLUMNS: CarColumn[] = ['make', 'bodyStyle', 'price', 'horsepower'];
+const CORE_COLUMNS: CarColumn[] = ['name', 'origin', 'mpg', 'horsepower'];
 const EXTENDED_COLUMNS: CarColumn[] = [
-  'fuelType',
-  'aspiration',
-  'driveWheels',
-  'numOfCylinders',
-  'engineType',
-  'cityMpg',
-  'highwayMpg',
-  'curbWeight',
+  'cylinders',
+  'displacement',
+  'weight',
+  'acceleration',
+  'modelYear',
 ];
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
@@ -96,7 +91,6 @@ const NO_FILTER_MATCHES: EmptyStateContent = {
     MatProgressBarModule,
     MatButtonModule,
     MatIconModule,
-    CurrencyPipe,
     DecimalPipe,
     TitleCasePipe,
     UpperCasePipe,
@@ -237,8 +231,19 @@ export class CarTable implements AfterViewInit {
       return;
     }
 
+    const criteria = this.filterCriteria();
+
+    if (hasSearchMpgConflict(criteria)) {
+      // The backend can't serve q + an MPG range in one query (see AutomobileRepository) — but
+      // `cars()` already holds the correctly filtered result set fetched around that same
+      // limitation, so build the CSV from it directly instead of hitting the backend at all.
+      this.fileDownload.downloadText('automobiles.csv', carsToCsv(this.cars()));
+      this.feedback.show('Exporting automobiles to CSV…');
+      return;
+    }
+
     const sort = this.sort();
-    const url = this.repository.buildExportUrl(this.filterCriteria(), {
+    const url = this.repository.buildExportUrl(criteria, {
       sortBy: sort.active || undefined,
       sortOrder: sort.direction || undefined,
     });

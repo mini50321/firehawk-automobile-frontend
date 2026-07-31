@@ -6,4 +6,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/automobile/components/car-table/car-table').then((m) => m.CarTable),
   },
+  {
+    path: 'add',
+    loadComponent: () =>
+      import('./features/automobile/components/car-form/car-form').then((m) => m.CarForm),
+  },
 ];

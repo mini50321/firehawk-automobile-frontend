@@ -13,32 +13,15 @@ import { Feedback } from '../../../../core/services/feedback';
 
 function buildCar(overrides: Partial<Car> & Pick<Car, 'id'>): Car {
   return {
-    symboling: 0,
-    normalizedLosses: 100,
-    make: 'toyota',
-    fuelType: 'gas',
-    aspiration: 'std',
-    numOfDoors: 4,
-    bodyStyle: 'sedan',
-    driveWheels: 'fwd',
-    engineLocation: 'front',
-    wheelBase: 95,
-    length: 170,
-    width: 65,
-    height: 55,
-    curbWeight: 2900,
-    engineType: 'ohc',
-    numOfCylinders: 4,
-    engineSize: 120,
-    fuelSystem: 'mpfi',
-    bore: 3.2,
-    stroke: 3.1,
-    compressionRatio: 9.5,
-    horsepower: 140,
-    peakRpm: 5000,
-    cityMpg: 25,
-    highwayMpg: 32,
-    price: 20000,
+    name: 'chevrolet chevelle malibu',
+    mpg: 18,
+    cylinders: 8,
+    displacement: 307,
+    horsepower: 130,
+    weight: 3504,
+    acceleration: 12,
+    modelYear: 1970,
+    origin: 'usa',
     ...overrides,
   };
 }
@@ -62,7 +45,7 @@ function searchableRepository(allCars: Car[]): RepositoryStub {
   return {
     getCars: vi.fn((criteria: CarFilterCriteria = EMPTY_CAR_FILTER_CRITERIA) => {
       const search = criteria.search.trim().toLowerCase();
-      const filtered = allCars.filter((car) => !search || car.make.toLowerCase().includes(search));
+      const filtered = allCars.filter((car) => !search || car.name.toLowerCase().includes(search));
       return of(filtered);
     }),
     buildExportUrl: vi.fn().mockReturnValue('https://api.example.com/cars/export'),
@@ -74,12 +57,14 @@ describe('CarTable', () => {
   let handsetMatches$: BehaviorSubject<boolean>;
   let dialogOpen: ReturnType<typeof vi.fn>;
   let downloadFromUrl: ReturnType<typeof vi.fn>;
+  let downloadText: ReturnType<typeof vi.fn>;
   let feedbackShow: ReturnType<typeof vi.fn>;
 
   function setup(repository: RepositoryStub): ComponentFixture<CarTable> {
     handsetMatches$ = new BehaviorSubject<boolean>(false);
     dialogOpen = vi.fn();
     downloadFromUrl = vi.fn();
+    downloadText = vi.fn();
     feedbackShow = vi.fn();
 
     TestBed.configureTestingModule({
@@ -96,7 +81,7 @@ describe('CarTable', () => {
           },
         },
         { provide: MatDialog, useValue: { open: dialogOpen } },
-        { provide: FileDownload, useValue: { downloadFromUrl } },
+        { provide: FileDownload, useValue: { downloadFromUrl, downloadText } },
         { provide: Feedback, useValue: { show: feedbackShow } },
       ],
     });
@@ -135,7 +120,7 @@ describe('CarTable', () => {
   });
 
   it('should hide the loading indicator and render rows once cars load', () => {
-    const cars = [buildCar({ id: '1', make: 'toyota' }), buildCar({ id: '2', make: 'honda' })];
+    const cars = [buildCar({ id: '1', name: 'toyota corona' }), buildCar({ id: '2', name: 'honda civic' })];
     fixture = setup(fixedRepository(of(cars)));
     fixture.detectChanges();
 
@@ -168,7 +153,7 @@ describe('CarTable', () => {
 
   it('should paginate results using the configured page size', async () => {
     const cars = Array.from({ length: 15 }, (_, i) =>
-      buildCar({ id: `${i}`, make: `make${i.toString().padStart(2, '0')}` }),
+      buildCar({ id: `${i}`, name: `car${i.toString().padStart(2, '0')}` }),
     );
     fixture = setup(fixedRepository(of(cars)));
     fixture.detectChanges();
@@ -193,9 +178,9 @@ describe('CarTable', () => {
 
   it('should sort rows when a sortable header is clicked', async () => {
     const cars = [
-      buildCar({ id: '1', make: 'toyota' }),
-      buildCar({ id: '2', make: 'acura' }),
-      buildCar({ id: '3', make: 'bmw' }),
+      buildCar({ id: '1', name: 'toyota corona' }),
+      buildCar({ id: '2', name: 'acura legend' }),
+      buildCar({ id: '3', name: 'bmw 320i' }),
     ];
     fixture = setup(fixedRepository(of(cars)));
     fixture.detectChanges();
@@ -203,16 +188,16 @@ describe('CarTable', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    const makeHeader = Array.from(root.querySelectorAll<HTMLElement>('th.mat-sort-header')).find(
-      (th) => th.textContent?.trim() === 'Make',
+    const nameHeader = Array.from(root.querySelectorAll<HTMLElement>('th.mat-sort-header')).find(
+      (th) => th.textContent?.trim() === 'Name',
     );
-    expect(makeHeader).toBeTruthy();
+    expect(nameHeader).toBeTruthy();
 
-    makeHeader?.click();
+    nameHeader?.click();
     fixture.detectChanges();
 
     const firstCellText = bodyRows(fixture.nativeElement)[0].querySelector('td')?.textContent;
-    expect(firstCellText).toContain('Acura');
+    expect(firstCellText).toContain('Acura Legend');
   });
 
   it('should show all columns by default on non-handset viewports', () => {
@@ -220,18 +205,15 @@ describe('CarTable', () => {
     fixture.detectChanges();
 
     expect(headerTexts(fixture.nativeElement)).toEqual([
-      'Make',
-      'Body style',
-      'Price',
+      'Name',
+      'Origin',
+      'MPG',
       'HP',
-      'Fuel',
-      'Aspiration',
-      'Drive',
       'Cyl',
-      'Engine',
-      'City MPG',
-      'Hwy MPG',
+      'Displacement',
       'Weight',
+      'Accel',
+      'Year',
     ]);
   });
 
@@ -242,7 +224,7 @@ describe('CarTable', () => {
     handsetMatches$.next(true);
     fixture.detectChanges();
 
-    expect(headerTexts(fixture.nativeElement)).toEqual(['Make', 'Body style', 'Price', 'HP']);
+    expect(headerTexts(fixture.nativeElement)).toEqual(['Name', 'Origin', 'MPG', 'HP']);
   });
 
   describe('filtering', () => {
@@ -255,7 +237,7 @@ describe('CarTable', () => {
     });
 
     it('should re-fetch from the backend (server-side search) when a search term is entered', async () => {
-      const cars = [buildCar({ id: '1', make: 'toyota' }), buildCar({ id: '2', make: 'honda' })];
+      const cars = [buildCar({ id: '1', name: 'toyota corona' }), buildCar({ id: '2', name: 'honda civic' })];
       const repository = searchableRepository(cars);
       fixture = setup(repository);
       fixture.detectChanges();
@@ -275,14 +257,14 @@ describe('CarTable', () => {
 
       const rows = bodyRows(fixture.nativeElement);
       expect(rows).toHaveLength(1);
-      expect(rows[0].textContent).toContain('Honda');
+      expect(rows[0].textContent).toContain('Honda Civic');
       expect(repository.getCars).toHaveBeenLastCalledWith(
         expect.objectContaining({ search: 'honda' }),
       );
     });
 
     it('should show a filters-specific empty state when nothing matches', async () => {
-      const cars = [buildCar({ id: '1', make: 'toyota' })];
+      const cars = [buildCar({ id: '1', name: 'toyota corona' })];
       fixture = setup(searchableRepository(cars));
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(300);
@@ -300,7 +282,7 @@ describe('CarTable', () => {
     });
 
     it('should offer a Reset Filters action in the empty state, which clears the filters', async () => {
-      const cars = [buildCar({ id: '1', make: 'toyota' })];
+      const cars = [buildCar({ id: '1', name: 'toyota corona' })];
       fixture = setup(searchableRepository(cars));
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(300);
@@ -329,8 +311,8 @@ describe('CarTable', () => {
 
     it('should recompute the stats cards to reflect only the filtered cars', async () => {
       const cars = [
-        buildCar({ id: '1', make: 'toyota', cityMpg: 30 }),
-        buildCar({ id: '2', make: 'honda', cityMpg: 40 }),
+        buildCar({ id: '1', name: 'toyota corona', mpg: 30 }),
+        buildCar({ id: '2', name: 'honda civic', mpg: 40 }),
       ];
       fixture = setup(searchableRepository(cars));
       fixture.detectChanges();
@@ -353,13 +335,13 @@ describe('CarTable', () => {
         el.textContent?.trim(),
       );
       expect(values[0]).toBe('1');
-      expect(values[3]).toBe('40');
+      expect(values[1]).toBe('40.0');
     });
   });
 
   describe('details dialog', () => {
     it('should open the details dialog with the clicked car when a row is clicked', () => {
-      const car = buildCar({ id: '1', make: 'toyota' });
+      const car = buildCar({ id: '1', name: 'toyota corona' });
       fixture = setup(fixedRepository(of([car])));
       fixture.detectChanges();
 
@@ -373,7 +355,7 @@ describe('CarTable', () => {
     });
 
     it('should open the details dialog when Enter is pressed on a focused row', () => {
-      const car = buildCar({ id: '1', make: 'toyota' });
+      const car = buildCar({ id: '1', name: 'toyota corona' });
       fixture = setup(fixedRepository(of([car])));
       fixture.detectChanges();
 
@@ -387,14 +369,14 @@ describe('CarTable', () => {
     });
 
     it('should mark rows as keyboard-focusable buttons for accessibility', () => {
-      const car = buildCar({ id: '1', make: 'toyota' });
+      const car = buildCar({ id: '1', name: 'toyota corona' });
       fixture = setup(fixedRepository(of([car])));
       fixture.detectChanges();
 
       const row = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
       expect(row.getAttribute('role')).toBe('button');
       expect(row.getAttribute('tabindex')).toBe('0');
-      expect(row.getAttribute('aria-label')).toBe('View details for toyota');
+      expect(row.getAttribute('aria-label')).toBe('View details for toyota corona');
     });
   });
 
@@ -406,7 +388,7 @@ describe('CarTable', () => {
     }
 
     it('should download the backend CSV export URL (honoring current filters) when Export CSV is clicked', () => {
-      const cars = [buildCar({ id: '1', make: 'toyota' }), buildCar({ id: '2', make: 'honda' })];
+      const cars = [buildCar({ id: '1', name: 'toyota corona' }), buildCar({ id: '2', name: 'honda civic' })];
       const repository = fixedRepository(of(cars));
       fixture = setup(repository);
       fixture.detectChanges();
@@ -441,6 +423,34 @@ describe('CarTable', () => {
       expect(downloadFromUrl).not.toHaveBeenCalled();
       expect(feedbackShow).toHaveBeenCalledWith('No automobiles to export.');
     });
+
+    it('should build the CSV client-side instead of calling the backend when search + an MPG range are both active', () => {
+      // Regression test: the backend rejects q + an MPG range with a 400 (Firestore's one
+      // range-filter-per-query limit) — export must fall back to building the CSV from the
+      // already-loaded `cars()` instead of hitting `/cars/export` with that same combination.
+      const cars = [buildCar({ id: '1', name: 'toyota corona', mpg: 24 })];
+      const repository = fixedRepository(of(cars));
+      fixture = setup(repository);
+      fixture.detectChanges();
+
+      fixture.componentInstance['filterCriteria'].set({
+        search: 'toyota',
+        origin: null,
+        cylinders: null,
+        mpg: { min: 20, max: 30 },
+      });
+      fixture.detectChanges();
+
+      fixture.componentInstance['exportCsv']();
+
+      expect(repository.buildExportUrl).not.toHaveBeenCalled();
+      expect(downloadFromUrl).not.toHaveBeenCalled();
+      expect(downloadText).toHaveBeenCalledWith(
+        'automobiles.csv',
+        expect.stringContaining('toyota corona'),
+      );
+      expect(feedbackShow).toHaveBeenCalledWith('Exporting automobiles to CSV…');
+    });
   });
 
   describe('persistence', () => {
@@ -452,14 +462,11 @@ describe('CarTable', () => {
         JSON.stringify({
           filters: {
             search: '',
-            fuelType: null,
-            aspiration: null,
-            bodyStyle: null,
-            driveWheels: null,
-            engineLocation: null,
-            price: { min: null, max: null },
+            origin: null,
+            cylinders: null,
+            mpg: { min: null, max: null },
           },
-          sortActive: 'make',
+          sortActive: 'name',
           sortDirection: 'desc',
           pageIndex: 1,
           pageSize: 5,
@@ -467,7 +474,7 @@ describe('CarTable', () => {
       );
 
       const cars = Array.from({ length: 15 }, (_, i) =>
-        buildCar({ id: `${i}`, make: `make${i.toString().padStart(2, '0')}` }),
+        buildCar({ id: `${i}`, name: `car${i.toString().padStart(2, '0')}` }),
       );
       fixture = setup(fixedRepository(of(cars)));
       fixture.detectChanges();
@@ -476,23 +483,23 @@ describe('CarTable', () => {
 
       const rows = bodyRows(fixture.nativeElement);
       expect(rows).toHaveLength(5);
-      expect(rows[0].querySelector('td')?.textContent).toContain('Make09');
+      expect(rows[0].querySelector('td')?.textContent).toContain('Car09');
     });
 
     it('should persist sort changes when a sortable header is clicked', () => {
-      const cars = [buildCar({ id: '1', make: 'toyota' }), buildCar({ id: '2', make: 'acura' })];
+      const cars = [buildCar({ id: '1', name: 'toyota corona' }), buildCar({ id: '2', name: 'acura legend' })];
       fixture = setup(fixedRepository(of(cars)));
       fixture.detectChanges();
 
       const root = fixture.nativeElement as HTMLElement;
-      const makeHeader = Array.from(root.querySelectorAll<HTMLElement>('th.mat-sort-header')).find(
-        (th) => th.textContent?.trim() === 'Make',
+      const nameHeader = Array.from(root.querySelectorAll<HTMLElement>('th.mat-sort-header')).find(
+        (th) => th.textContent?.trim() === 'Name',
       );
-      makeHeader?.click();
+      nameHeader?.click();
       fixture.detectChanges();
 
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-      expect(stored.sortActive).toBe('make');
+      expect(stored.sortActive).toBe('name');
       expect(stored.sortDirection).toBe('asc');
     });
 

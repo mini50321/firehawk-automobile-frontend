@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -6,6 +6,9 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 type QueryParams = Record<string, string | number | boolean>;
+interface RequestOptions {
+  headers?: Record<string, string>;
+}
 
 /** Every backend JSON response uses this envelope (see the backend's `sendSuccess`/`errorHandler`). */
 interface ApiEnvelope<T> {
@@ -26,9 +29,9 @@ export class Api {
       .pipe(map((response) => response.data));
   }
 
-  post<T>(path: string, body: unknown): Observable<T> {
+  post<T>(path: string, body: unknown, options?: RequestOptions): Observable<T> {
     return this.http
-      .post<ApiEnvelope<T>>(this.url(path), body)
+      .post<ApiEnvelope<T>>(this.url(path), body, { headers: this.toHttpHeaders(options) })
       .pipe(map((response) => response.data));
   }
 
@@ -74,5 +77,9 @@ export class Api {
       httpParams = httpParams.set(key, value);
     }
     return httpParams;
+  }
+
+  private toHttpHeaders(options?: RequestOptions): HttpHeaders | undefined {
+    return options?.headers ? new HttpHeaders(options.headers) : undefined;
   }
 }

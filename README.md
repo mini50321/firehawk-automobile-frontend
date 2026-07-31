@@ -1,6 +1,6 @@
 # Firehawk Automobile — Frontend
 
-Angular frontend for browsing the automobile spec-sheet dataset served by the Firehawk backend.
+Angular frontend for browsing the "Auto MPG" automobile dataset served by the Firehawk backend.
 Built with standalone components, Angular Material, and a feature-based architecture. Talks to
 the backend exclusively over its REST API — it does not access Firestore, or any other data
 store, directly.
@@ -8,18 +8,24 @@ store, directly.
 > This repository contains the frontend only. The backend lives in a separate repository and is
 > the single source of truth for all data; this app is purely a REST client for it.
 
+See [`USER_GUIDE.md`](USER_GUIDE.md) for a plain-language guide to using the deployed site — this
+README is for developers.
+
 ## Features
 
 - **Automobile table** — sortable (client-side, over the current search result), paginated
   Angular Material table.
-- **Server-side search & filtering** — debounced search by make plus filters for fuel type,
-  aspiration, body style, drive wheels, engine location, and price range, all sent to the
-  backend as query params and built with Reactive Forms and RxJS.
-- **Automobile details dialog** — inspect a single record's full spec sheet.
-- **Summary statistics cards** — total count, average price, average horsepower, and average
-  city MPG, computed over whatever the current search/filter currently has loaded.
+- **Server-side search & filtering** — debounced search by name plus filters for origin,
+  cylinders, and an MPG range, all sent to the backend as query params and built with Reactive
+  Forms and RxJS.
+- **Automobile details dialog** — inspect a single record's full details.
+- **Summary statistics cards** — total count, average MPG, average horsepower, and average
+  weight, computed over whatever the current search/filter currently has loaded.
 - **CSV export** — downloads the full (not just currently-loaded-page) matching result set
   directly from the backend's `/cars/export` endpoint, honoring the current filters and sort.
+- **Add a car** — a simple form (`/add`) for adding a new automobile, gated behind a shared admin
+  key (`core/services/admin-auth.ts`, sessionStorage-backed) since the backend has no
+  user-account system. See [`USER_GUIDE.md`](USER_GUIDE.md) for the end-user walkthrough.
 - **Persisted view state** — search, filters, sort order, current page, and page size are saved
   to `localStorage` and restored automatically on reload.
 - **Empty states & feedback** — contextual empty states (no data / no matches / load error) with
@@ -49,17 +55,17 @@ store, directly.
 ```
 src/app/
   core/                     # Singleton, app-wide concerns
-    services/                 # REST API client, local storage, feedback, file download
+    services/                 # REST API client, admin-key auth, local storage, feedback, file download
     interceptors/              # HTTP interceptors (global error handling)
   shared/                   # Reusable, feature-agnostic building blocks
     components/                # e.g. EmptyState
     models/                    # Shared TypeScript types
-  layout/                   # Application shell (toolbar, main layout/sidenav)
+  layout/                   # Application shell (toolbar, main layout/sidenav, nav links)
   features/
     automobile/               # The automobile domain feature
-      components/                # CarTable, CarFilters, CarStats, CarDetailsDialog
+      components/                # CarTable, CarFilters, CarStats, CarDetailsDialog, CarForm
       services/                  # AutomobileRepository, view-state store
-      models/                    # Car, filter criteria, stats types
+      models/                    # Car, filter criteria, stats, and shared enum-option types
       utils/                     # Pure functions: calculateCarStats
 ```
 
@@ -131,9 +137,10 @@ npm run lint        # ESLint
 npm run format:check # Prettier check (use `npm run format` to auto-fix)
 ```
 
-The suite covers the REST API client (envelope unwrapping), the error interceptor, the
-automobile repository (query-param mapping, cursor-pagination looping), local storage
-persistence, and component behavior.
+The suite covers the REST API client (envelope unwrapping, custom headers), the error
+interceptor, the automobile repository (query-param mapping, cursor-pagination looping,
+`createCar`), admin-key persistence (`AdminAuth`), local storage persistence, and component
+behavior — including the add-car form's unlock flow and its handling of a rejected admin key.
 
 ## Docker
 

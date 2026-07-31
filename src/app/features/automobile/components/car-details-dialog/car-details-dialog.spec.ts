@@ -6,32 +6,15 @@ import { Car } from '../../models/car.model';
 
 const CAR: Car = {
   id: '1',
-  symboling: 0,
-  normalizedLosses: 100,
-  make: 'toyota',
-  fuelType: 'gas',
-  aspiration: 'std',
-  numOfDoors: 4,
-  bodyStyle: 'sedan',
-  driveWheels: 'fwd',
-  engineLocation: 'front',
-  wheelBase: 95,
-  length: 170,
-  width: 65,
-  height: 55,
-  curbWeight: 2900,
-  engineType: 'ohc',
-  numOfCylinders: 4,
-  engineSize: 120,
-  fuelSystem: 'mpfi',
-  bore: 3.2,
-  stroke: 3.1,
-  compressionRatio: 9.5,
-  horsepower: 140,
-  peakRpm: 5000,
-  cityMpg: 25,
-  highwayMpg: 32,
-  price: 20000,
+  name: 'chevrolet chevelle malibu',
+  mpg: 18,
+  cylinders: 8,
+  displacement: 307,
+  horsepower: 130,
+  weight: 3504,
+  acceleration: 12,
+  modelYear: 1970,
+  origin: 'usa',
 };
 
 describe('CarDetailsDialog', () => {
@@ -50,36 +33,29 @@ describe('CarDetailsDialog', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render the make and body style in the title', () => {
+  it('should render the car name in the title', () => {
     const title = fixture.nativeElement.querySelector('[mat-dialog-title]');
-    expect(title?.textContent).toContain('Toyota');
-    expect(title?.textContent).toContain('Sedan');
+    expect(title?.textContent).toContain('Chevrolet Chevelle Malibu');
   });
 
   it('should render every car field', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('$20,000.00');
-    expect(text).toContain('Gas');
-    expect(text).toContain('Std');
-    expect(text).toContain('FWD');
-    expect(text).toContain('Front');
-    expect(text).toContain('OHC');
-    expect(text).toContain('MPFI');
-    expect(text).toContain('120');
-    expect(text).toContain('140');
-    expect(text).toContain('25 / 32');
-    expect(text).toContain('2,900');
-    expect(text).toContain('4');
+    expect(text).toContain('Usa');
+    expect(text).toContain('18');
+    expect(text).toContain('8');
+    expect(text).toContain('307');
+    expect(text).toContain('130');
+    expect(text).toContain('3,504');
+    expect(text).toContain('12');
+    expect(text).toContain('1970');
   });
 
-  it('should show "Unknown" for null price and horsepower instead of blank', () => {
+  it('should show "Unknown" for a null horsepower instead of blank', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [CarDetailsDialog],
-      providers: [
-        { provide: MAT_DIALOG_DATA, useValue: { ...CAR, price: null, horsepower: null } },
-      ],
+      providers: [{ provide: MAT_DIALOG_DATA, useValue: { ...CAR, horsepower: null } }],
     });
     const nullFixture = TestBed.createComponent(CarDetailsDialog);
     nullFixture.detectChanges();
