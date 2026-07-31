@@ -8,6 +8,8 @@ store, directly.
 > This repository contains the frontend only. The backend lives in a separate repository and is
 > the single source of truth for all data; this app is purely a REST client for it.
 
+**Live site:** https://automobile-frontend-kohl.vercel.app/
+
 See [`USER_GUIDE.md`](USER_GUIDE.md) for a plain-language guide to using the deployed site — this
 README is for developers.
 
@@ -170,6 +172,8 @@ Because `apiBaseUrl` is baked in at build time (see above), make sure
 `scripts/set-env.mjs`) points at the right backend URL *before* running `docker build`.
 
 ## Deployment (Vercel)
+
+Deployed at **https://automobile-frontend-kohl.vercel.app/**.
 
 The app is a static SPA, so it deploys to Vercel without Docker/Nginx. `vercel.json` at the
 project root configures everything Vercel needs:
