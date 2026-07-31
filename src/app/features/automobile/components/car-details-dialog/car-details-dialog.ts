@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CurrencyPipe, DecimalPipe, TitleCasePipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 
@@ -7,7 +7,14 @@ import { Car } from '../../models/car.model';
 
 @Component({
   selector: 'app-car-details-dialog',
-  imports: [MatDialogModule, MatButtonModule, CurrencyPipe, DecimalPipe, TitleCasePipe],
+  imports: [
+    MatDialogModule,
+    MatButtonModule,
+    CurrencyPipe,
+    DecimalPipe,
+    TitleCasePipe,
+    UpperCasePipe,
+  ],
   templateUrl: './car-details-dialog.html',
   styleUrl: './car-details-dialog.scss',
 })

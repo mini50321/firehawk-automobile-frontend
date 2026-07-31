@@ -8,8 +8,8 @@
 
   <mat-card class="car-stats-card" appearance="outlined">
     <mat-card-content>
-      <span class="car-stats-value">{{ stats().averageMpg | number: '1.0-1' }}</span>
-      <span class="car-stats-label">Average MPG</span>
+      <span class="car-stats-value">{{ stats().averagePrice | currency: '$':'symbol':'1.0-0' }}</span>
+      <span class="car-stats-label">Average Price</span>
     </mat-card-content>
   </mat-card>
 
@@ -22,8 +22,8 @@
 
   <mat-card class="car-stats-card" appearance="outlined">
     <mat-card-content>
-      <span class="car-stats-value">{{ stats().averageWeight | number: '1.0-0' }} lbs</span>
-      <span class="car-stats-label">Average Weight</span>
+      <span class="car-stats-value">{{ stats().averageCityMpg | number: '1.0-1' }}</span>
+      <span class="car-stats-label">Average City MPG</span>
     </mat-card-content>
   </mat-card>
 </div>

@@ -4,7 +4,30 @@ import { catchError, throwError } from 'rxjs';
 
 import { Feedback } from '../services/feedback';
 
+/** Shape of every backend error response — see the backend's `errorHandler` middleware. */
+interface ApiErrorBody {
+  success: false;
+  error: { message?: string };
+}
+
+function isApiErrorBody(body: unknown): body is ApiErrorBody {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    (body as { success?: unknown }).success === false &&
+    typeof (body as { error?: unknown }).error === 'object'
+  );
+}
+
 function describeError(error: HttpErrorResponse): string {
+  // Prefer the backend's own message (e.g. "Automobile not found: abc123", or the 400 explaining
+  // why a text search can't be combined with a price range) — it's more specific and actionable
+  // than a generic per-status message, and is exactly what the centralized error handler wrote
+  // for this exact failure.
+  if (isApiErrorBody(error.error) && typeof error.error.error.message === 'string') {
+    return error.error.error.message;
+  }
+
   if (error.status === 0) {
     return 'Unable to reach the server. Check your connection and try again.';
   }

@@ -1,13 +1,13 @@
 <div class="car-table-container">
-  <app-car-stats [cars]="filteredCars()" />
+  <app-car-stats [cars]="cars()" />
 
-  <app-car-filters [cars]="cars()" (filtersChange)="filterCriteria.set($event)" />
+  <app-car-filters (filtersChange)="filterCriteria.set($event)" />
 
   <div class="car-table-actions">
     <button
       mat-stroked-button
       type="button"
-      [disabled]="loading() || filteredCars().length === 0"
+      [disabled]="loading() || cars().length === 0"
       (click)="exportCsv()"
     >
       <mat-icon>download</mat-icon>
@@ -31,67 +31,62 @@
     >
       <ng-container matColumnDef="make">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Make</th>
-        <td mat-cell *matCellDef="let car">{{ car.make }}</td>
+        <td mat-cell *matCellDef="let car">{{ car.make | titlecase }}</td>
       </ng-container>
 
-      <ng-container matColumnDef="model">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Model</th>
-        <td mat-cell *matCellDef="let car">{{ car.model }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="year">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Year</th>
-        <td mat-cell *matCellDef="let car">{{ car.year }}</td>
+      <ng-container matColumnDef="bodyStyle">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Body style</th>
+        <td mat-cell *matCellDef="let car">{{ car.bodyStyle | titlecase }}</td>
       </ng-container>
 
       <ng-container matColumnDef="price">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th>
-        <td mat-cell *matCellDef="let car">{{ car.price | currency }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="color">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Color</th>
-        <td mat-cell *matCellDef="let car">{{ car.color }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="mileage">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Mileage</th>
-        <td mat-cell *matCellDef="let car">{{ car.mileage | number }} mi</td>
-      </ng-container>
-
-      <ng-container matColumnDef="vin">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>VIN</th>
-        <td mat-cell *matCellDef="let car">{{ car.vin }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
-        <td mat-cell *matCellDef="let car">{{ car.status }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="origin">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Origin</th>
-        <td mat-cell *matCellDef="let car">{{ car.origin }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="cylinders">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Cyl</th>
-        <td mat-cell *matCellDef="let car">{{ car.cylinders }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="mpg">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>MPG</th>
-        <td mat-cell *matCellDef="let car">{{ car.mpg }}</td>
+        <td mat-cell *matCellDef="let car">{{ car.price != null ? (car.price | currency) : '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="horsepower">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>HP</th>
-        <td mat-cell *matCellDef="let car">{{ car.horsepower }}</td>
+        <td mat-cell *matCellDef="let car">{{ car.horsepower ?? '—' }}</td>
       </ng-container>
 
-      <ng-container matColumnDef="weight">
+      <ng-container matColumnDef="fuelType">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Fuel</th>
+        <td mat-cell *matCellDef="let car">{{ car.fuelType }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="aspiration">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Aspiration</th>
+        <td mat-cell *matCellDef="let car">{{ car.aspiration }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="driveWheels">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Drive</th>
+        <td mat-cell *matCellDef="let car">{{ car.driveWheels | uppercase }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="numOfCylinders">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Cyl</th>
+        <td mat-cell *matCellDef="let car">{{ car.numOfCylinders }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="engineType">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Engine</th>
+        <td mat-cell *matCellDef="let car">{{ car.engineType | uppercase }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cityMpg">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>City MPG</th>
+        <td mat-cell *matCellDef="let car">{{ car.cityMpg }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="highwayMpg">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Hwy MPG</th>
+        <td mat-cell *matCellDef="let car">{{ car.highwayMpg }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="curbWeight">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Weight</th>
-        <td mat-cell *matCellDef="let car">{{ car.weight | number }} lbs</td>
+        <td mat-cell *matCellDef="let car">{{ car.curbWeight | number }} lbs</td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
@@ -101,7 +96,7 @@
         class="car-table-row"
         tabindex="0"
         role="button"
-        [attr.aria-label]="'View details for ' + row.make + ' ' + row.model"
+        [attr.aria-label]="'View details for ' + row.make"
         (click)="openDetails(row)"
         (keydown.enter)="openDetails(row)"
         (keydown.space)="$event.preventDefault(); openDetails(row)"

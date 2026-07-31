@@ -1,27 +1,33 @@
-import { CarOrigin } from './car.model';
+import { Aspiration, BodyStyle, DriveWheels, EngineLocation, FuelType } from './car.model';
 
 export interface NumberRange {
   min: number | null;
   max: number | null;
 }
 
+/**
+ * Every field here maps 1:1 to a query param the backend's `/cars/search` endpoint actually
+ * supports (see backend/src/models/automobile.model.ts) — this UI deliberately doesn't offer a
+ * filter the server can't apply.
+ */
 export interface CarFilterCriteria {
-  /** Matched against make + model, case-insensitive. */
+  /** Maps to `q` — a case-insensitive prefix match on `make`. */
   search: string;
-  origin: CarOrigin | null;
-  cylinders: number | null;
-  modelYear: number | null;
-  mpg: NumberRange;
-  horsepower: NumberRange;
-  weight: NumberRange;
+  fuelType: FuelType | null;
+  aspiration: Aspiration | null;
+  bodyStyle: BodyStyle | null;
+  driveWheels: DriveWheels | null;
+  engineLocation: EngineLocation | null;
+  /** Maps to `minPrice`/`maxPrice`. */
+  price: NumberRange;
 }
 
 export const EMPTY_CAR_FILTER_CRITERIA: CarFilterCriteria = {
   search: '',
-  origin: null,
-  cylinders: null,
-  modelYear: null,
-  mpg: { min: null, max: null },
-  horsepower: { min: null, max: null },
-  weight: { min: null, max: null },
+  fuelType: null,
+  aspiration: null,
+  bodyStyle: null,
+  driveWheels: null,
+  engineLocation: null,
+  price: { min: null, max: null },
 };

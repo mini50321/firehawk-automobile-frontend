@@ -1,36 +1,45 @@
-<h2 mat-dialog-title>{{ car.make }} {{ car.model }} ({{ car.year }})</h2>
+<h2 mat-dialog-title>{{ car.make | titlecase }} ({{ car.bodyStyle | titlecase }})</h2>
 
 <mat-dialog-content>
   <dl class="car-details-grid">
-    <dt>VIN</dt>
-    <dd>{{ car.vin }}</dd>
-
-    <dt>Color</dt>
-    <dd>{{ car.color }}</dd>
-
-    <dt>Mileage</dt>
-    <dd>{{ car.mileage | number }} mi</dd>
-
     <dt>Price</dt>
-    <dd>{{ car.price | currency }}</dd>
+    <dd>{{ car.price != null ? (car.price | currency) : 'Unknown' }}</dd>
 
-    <dt>Status</dt>
-    <dd>{{ car.status | titlecase }}</dd>
+    <dt>Fuel type</dt>
+    <dd>{{ car.fuelType | titlecase }}</dd>
 
-    <dt>Origin</dt>
-    <dd>{{ car.origin }}</dd>
+    <dt>Aspiration</dt>
+    <dd>{{ car.aspiration | titlecase }}</dd>
+
+    <dt>Drive wheels</dt>
+    <dd>{{ car.driveWheels | uppercase }}</dd>
+
+    <dt>Engine location</dt>
+    <dd>{{ car.engineLocation | titlecase }}</dd>
+
+    <dt>Engine type</dt>
+    <dd>{{ car.engineType | uppercase }}</dd>
 
     <dt>Cylinders</dt>
-    <dd>{{ car.cylinders }}</dd>
+    <dd>{{ car.numOfCylinders }}</dd>
 
-    <dt>MPG</dt>
-    <dd>{{ car.mpg }}</dd>
+    <dt>Engine size</dt>
+    <dd>{{ car.engineSize }} cc</dd>
+
+    <dt>Fuel system</dt>
+    <dd>{{ car.fuelSystem | uppercase }}</dd>
 
     <dt>Horsepower</dt>
-    <dd>{{ car.horsepower }}</dd>
+    <dd>{{ car.horsepower ?? 'Unknown' }}</dd>
 
-    <dt>Weight</dt>
-    <dd>{{ car.weight | number }} lbs</dd>
+    <dt>City / Highway MPG</dt>
+    <dd>{{ car.cityMpg }} / {{ car.highwayMpg }}</dd>
+
+    <dt>Curb weight</dt>
+    <dd>{{ car.curbWeight | number }} lbs</dd>
+
+    <dt>Doors</dt>
+    <dd>{{ car.numOfDoors ?? 'Unknown' }}</dd>
   </dl>
 </mat-dialog-content>
 

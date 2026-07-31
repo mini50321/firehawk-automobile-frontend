@@ -1,69 +1,67 @@
 <form [formGroup]="form" class="car-filters">
   <mat-form-field appearance="outline" class="car-filters-search">
     <mat-label>Search</mat-label>
-    <input matInput formControlName="search" placeholder="Search by make or model" />
+    <input matInput formControlName="search" placeholder="Search by make" />
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Origin</mat-label>
-    <mat-select formControlName="origin">
-      <mat-option [value]="null">All origins</mat-option>
-      @for (origin of origins(); track origin) {
-        <mat-option [value]="origin">{{ origin }}</mat-option>
+    <mat-label>Fuel type</mat-label>
+    <mat-select formControlName="fuelType">
+      <mat-option [value]="null">All fuel types</mat-option>
+      @for (option of fuelTypeOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Cylinders</mat-label>
-    <mat-select formControlName="cylinders">
+    <mat-label>Aspiration</mat-label>
+    <mat-select formControlName="aspiration">
       <mat-option [value]="null">All</mat-option>
-      @for (count of cylinderOptions(); track count) {
-        <mat-option [value]="count">{{ count }}</mat-option>
+      @for (option of aspirationOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Model year</mat-label>
-    <mat-select formControlName="modelYear">
-      <mat-option [value]="null">All years</mat-option>
-      @for (year of modelYears(); track year) {
-        <mat-option [value]="year">{{ year }}</mat-option>
+    <mat-label>Body style</mat-label>
+    <mat-select formControlName="bodyStyle">
+      <mat-option [value]="null">All body styles</mat-option>
+      @for (option of bodyStyleOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
 
-  <div class="car-filters-range" role="group" aria-label="MPG range">
-    <mat-form-field appearance="outline">
-      <mat-label>Min MPG</mat-label>
-      <input matInput type="number" formControlName="mpgMin" />
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>Max MPG</mat-label>
-      <input matInput type="number" formControlName="mpgMax" />
-    </mat-form-field>
-  </div>
+  <mat-form-field appearance="outline">
+    <mat-label>Drive wheels</mat-label>
+    <mat-select formControlName="driveWheels">
+      <mat-option [value]="null">All</mat-option>
+      @for (option of driveWheelsOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 
-  <div class="car-filters-range" role="group" aria-label="Horsepower range">
-    <mat-form-field appearance="outline">
-      <mat-label>Min HP</mat-label>
-      <input matInput type="number" formControlName="horsepowerMin" />
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>Max HP</mat-label>
-      <input matInput type="number" formControlName="horsepowerMax" />
-    </mat-form-field>
-  </div>
+  <mat-form-field appearance="outline">
+    <mat-label>Engine location</mat-label>
+    <mat-select formControlName="engineLocation">
+      <mat-option [value]="null">All</mat-option>
+      @for (option of engineLocationOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 
-  <div class="car-filters-range" role="group" aria-label="Weight range in pounds">
+  <div class="car-filters-range" role="group" aria-label="Price range">
     <mat-form-field appearance="outline">
-      <mat-label>Min lbs</mat-label>
-      <input matInput type="number" formControlName="weightMin" />
+      <mat-label>Min price</mat-label>
+      <input matInput type="number" formControlName="priceMin" />
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Max lbs</mat-label>
-      <input matInput type="number" formControlName="weightMax" />
+      <mat-label>Max price</mat-label>
+      <input matInput type="number" formControlName="priceMax" />
     </mat-form-field>
   </div>
 

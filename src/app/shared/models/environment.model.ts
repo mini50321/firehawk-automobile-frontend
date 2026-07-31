@@ -1,15 +1,6 @@
-export interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-}
-
 export interface Environment {
   production: boolean;
   appName: string;
+  /** Base URL of the backend REST API, including any path prefix (e.g. `/api`). */
   apiBaseUrl: string;
-  firebase: FirebaseConfig;
 }
